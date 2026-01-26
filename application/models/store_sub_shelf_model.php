@@ -1,0 +1,59 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+/**
+** [C]Example_user_type_model : Class Example_user_type_model extends from CI model.
+**/
+class Store_sub_shelf_model extends CI_Model
+{
+	private $CI;
+
+    function __construct()
+    {
+        //:[Call the Model constructor]
+        parent::__construct();
+        $this->CI =& get_instance();
+
+        $this->CI->load->library('util/cache_util');
+    }
+
+
+    function get_by_shop($shop_id,$per_page){
+
+    	$datas = $this->CI->cache_util->select_data('model','store_sub_shelf','get_by_shop|'.$shop_id.'|'.$per_page,'store_manage/sub_shelf/get_by_shop/'.$shop_id.'/'.$per_page);
+
+		return $datas;
+	}
+
+	function get_by_shop_nospin($shop_id){
+
+    	$datas = $this->CI->cache_util->select_data_nospin('model','store_sub_shelf','get_by_shop|'.$shop_id,'store_manage/sub_shelf/get_by_shop/'.$shop_id);
+
+		return $datas;
+	}
+
+	function get_by_id($id_en){
+
+    	$datas = $this->CI->cache_util->select_data('model','store_sub_shelf','get_by_id|'.$id_en,'store_manage/sub_shelf/get_by_id/'.$id_en);
+
+		return $datas;
+	}
+
+	function del_cache_by_shop($shop_id){
+		//echo 'get_by_id|'.$id_en;
+		$this->CI->cache->delete('model','store_sub_shelf','get_by_shop|'.$shop_id);
+
+	}
+
+	function del_cache_by_id($id){
+		//echo 'get_by_id|'.$id_en;
+		$this->CI->cache->delete('model','store_sub_shelf','get_by_id|'.$id);
+
+	}
+	
+	
+}
+
+/* End of file company_profile_model.php */
+/* Location: ./application/models/company_profile_model.php */
+
+
+

@@ -1,0 +1,210 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Bny Accounting</title>
+    <link href="<?php echo base_url();?>assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="<?php echo base_url();?>assets/css/style.css" rel="stylesheet" type="text/css" />        
+    <style>
+      .table1 {
+        margin-top: 3em;
+        width: 100%;
+        height: 100%; 
+        background: #FFF;
+        overflow:visible;
+        page-break-before: always;
+        table-layout:fixed;
+        border: 0px solid black;
+        border-spacing: 0px;
+        border-collapse: separate;
+        font-size: 1em;
+      }
+      .table2 {
+        width: 100%;
+        height: 100%; 
+        background: #FFF;
+        overflow:visible;
+        table-layout:fixed;
+        border: 0px solid black;
+        border-spacing: 0px;
+        border-collapse: separate;
+      }
+
+      td { 
+        padding: 0.1em;
+        font-size: 1em;
+        height: 3em;
+      }
+
+      tr { line-height:.01em; }
+
+      body {
+          padding-top:0.5em;
+      }
+
+      .bny{
+        font-size: 0.8em;
+        line-height: 1.2em;
+      }
+
+      .tbhead{
+        font-size: 0.8em;
+        line-height: 1.2em;
+      }
+
+      .taxinvoice{
+        font-size: 2.5em;
+        font-weight: bolder;
+        height: 2.5em;
+      }
+      .taxinvoicenumber{
+        font-size: 3em;
+        line-height: 1.2em;
+      }
+      .transacdetail{
+        text-decoration: none !important;
+        padding: 0px;
+        font-size: 0.8em;
+        text-align: right;
+      }
+
+      .conclution{
+        padding: 1em !important;
+        line-height: 0.5em  !important;
+        font-size: 0.85em;
+      }
+    </style>
+  </head>
+  <body style="background: #FFF;">
+    <center>                                     
+      <?php  
+      if($validdata==0)
+      {?>
+      <center>ไม่พบข้อมูล</center>
+      <?php 
+      }
+      else
+      {
+        $total_rows= count($arr_reciepts);                                                  
+        $rows_per_page=50;
+        $row_runner=1;  
+        $page_runner=0;
+        $totalpages=ceil($total_rows/$rows_per_page);
+        $page_priceacc=0;
+        $page_VATacc=0;
+
+        $page_total_price=0;
+        $page_total_qty=0;
+
+        $page_priceacc=0;
+         $page_voucher_seller=0;
+         $page_voucher_platform=0;
+         $page_voucher=0;
+         $page_VATacc=0;
+         $page_priceVATincluded=0;
+         $page_priceBeforeVAT=0;
+         $page_shipping_fee_acc = 0;
+
+//echo $row_runner."--".$total_rows;
+        while($row_runner<=$total_rows)
+        {
+          foreach($arr_reciepts as $row)
+          {         
+            if(fmod($row_runner-1,$rows_per_page)==0 || $row_runner==1) // new page
+            {
+
+      ?>
+      <table class="table1 table-borderless">
+        <col style="width:5%">
+        <col style="width:10%">
+        <col style="width:20%">
+        <col style="width:20%">
+        <col style="width:15%">
+        <col style="width:10%">
+        <col style="width:15%">
+        <col style="width:5%">
+        <thead>
+          <tr>
+            <th colspan="8"><center><h1>Inventory Reciept</h1></center></th>
+          </tr>  
+          <tr>
+            <th colspan="6" class="bny">ชื่อผู้ประกอบการ: บริษัท บีเอ็นวายฟู้ด โพรดักส์ จำกัด</th>
+            <th colspan="2" style="text-align: right;" class="bny">หน้า: <?php echo $page_runner+1;?></th>
+          </tr>  
+          <tr>
+            <th colspan="8" class="bny">ที่อยู่: 23/1 หมู่ 2 ต.ศรีสุนทร อ.ถลาง จ.ภูเก็ต 83110</th>
+          </tr>   
+          <tr>
+            <th colspan="8" class="bny">เลขประจำตัวผู้เสียภาษี: 0835563000306 สำนักงานใหญ่</th>
+          </tr> 
+        </thead>
+      </table>
+      <table class="table2  table-striped">
+        <col style="width:5%">
+        <col style="width:25%">
+        <col style="width:25%">
+        <col style="width:15%">
+        <col style="width:15%">
+        <col style="width:15%">
+        <thead>   
+          <tr>
+            <th colspan="8" class="tbhead"><hr></th>
+          </tr>  
+          <tr>    
+            <th style="text-align:center">ลำดับ</th>
+            <th style="text-align:center">ชื่อสินค้า</th>
+            <th style="text-align:center">ขนาด</th>
+            <th style="text-align:center">ราคา/หน่วย</th>
+            <th style="text-align:center;line-height: initial;">จำนวน</th>
+            <th style="text-align:center;line-height: initial;">ราคารวม</th>
+          </tr>
+        </thead>
+      <?php }   //new page?>
+        <tbody>                                       
+          <?php $cal_price = $row["material_unit_price"]*$row["qty"];?>
+          <tr>
+            <td class="transacdetail" style="text-align:center"><center><?php echo $row_runner;?></center></td>
+            <td class="transacdetail" style="text-align:center"><?php echo $row["material_name"];?> </td>
+            <td class="transacdetail" style="text-align:center"><?php echo $row["material_size"];?> </td>
+            <td class="transacdetail" style="text-align:center"><?php echo number_format($row["material_unit_price"],2,".",",");?> </td>
+            <td class="transacdetail"><?php echo $row["qty"];?></td> 
+            <td class="transacdetail"><?php echo number_format($cal_price,2,".",",");?></td>                    
+          </tr><!--end tr-->
+          <?php
+            $page_total_price=$page_total_price+$cal_price;
+
+            if(fmod($row_runner,$rows_per_page)==0) // new page
+            {
+              $page_runner++;
+            }
+              $row_runner++;
+
+ // echo "page_runner:".$page_runner;
+ // echo "totalpages:".$totalpages;
+            }
+          }
+          if(($page_runner+1)==$totalpages)
+            { ?> 
+            <tr>  
+              <td  colspan="5" ><div style="text-align: right;">รวมทั้งหมด: </div></td>  
+              <td  class="conclution" ><div style="text-align: right;"><?php echo number_format($page_total_price,2,".",","); ?></div></td>
+              <td  ></td>
+            </tr>
+          </tbody>
+        </table>
+  <?php }}?>     
+    </center>   
+  </body>
+</html>
+<script src="<?php echo base_url();?>global/vendor/jquery/jquery.js"></script>
+<script>
+  $("a.moretax").on("click", function() {
+  var share_link = $(this).prop('id');
+  console.log(share_link);
+window.open(share_link, "_blank", "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no,top=500,left=500,width=1200,height=800");
+
+});
+  </script>

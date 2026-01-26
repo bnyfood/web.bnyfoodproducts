@@ -1,0 +1,303 @@
+.panel_box .btn-primary {
+  width: auto;
+  display: initial;
+  margin: 0;
+}
+
+.panel_box .text-nowrap {
+  text-align: center;
+}
+
+.panel_box .table thead {
+  background: #eee;
+}
+
+.panel_box .table tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.panel_box .avatar-online i {
+  margin: 5px;
+}
+
+.panel_box .btn-group-sm > .btn, .btn-sm {
+  padding: 10px 15px;
+}
+
+.panel_box .btn .icon {
+  margin: 0;
+}
+
+.panel_box .col-md-4, .panel_box .col-md-6, .panel_box .col-md-1, .panel_box .col-md-2, .panel_box .col-md-3 {
+  float: left;
+}
+
+.panel_box .row_col {
+  margin-left: -15px;
+  margin-right: -15px;
+}
+
+.panel_box hr {
+  display: inline-block;
+  width: 100%;
+}
+
+.table-bordered {
+  border: none;
+}
+
+.panel_box .panel-group .panel-title::before, .panel_box .panel-group .panel-title::after {
+  content: none;
+}
+
+.collapse:not(.show) {
+  display: block;
+}
+
+.panel_box .panel-group .panel-collapse .panel-body, .panel_box .panel-group .panel-title {
+  padding: 0;
+}
+
+.panel_box .panel-heading {
+  /*pointer-events: none;*/
+  display: none;
+}
+.moreless_button {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+button:focus {
+  outline: none;
+}
+
+.hide_less, .moreless_button {
+  display: none;
+}
+.hide {
+  display: none;
+}
+
+.more_text1, .more_text2, .more_text3 {
+  display: revert;
+}
+.panel_box .panel-default .panel-heading{
+  background: #eee;
+  border: 1px solid #eee;
+  padding: 10px;
+  border-radius: 5px;
+}
+.panel_box .panel-default .panel-heading+.panel-collapse>.panel-body{
+  padding: 10px 0;
+}
+.panel_box .panel-default .example-title{
+  display: none;
+}
+.panel_box .more_text1.active1, .panel_box .more_text2.active2, .panel_box .more_text3.active3{
+  display: inline-block!important;
+}
+.panel-group .panel-title:focus, .panel-group .panel-title:hover{
+  color:#37474f;
+}
+.gallery li{
+  display: none;
+}
+.gallery li:nth-child(1){
+  display: block;
+}
+.panel_box .gallery img{
+  width: 100%;
+  border-radius: 0;
+}
+.panel_box ul{
+  margin: 0;
+  padding: 0;
+
+}
+
+
+@media screen and (max-width: 1199px) {
+  .box_button {
+    width: 100% !important;
+    max-width: inherit;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  .col-md-4 {
+    width: 50%;
+    max-width: inherit;
+  }
+}
+
+@media screen and (max-width: 991px) {
+  .panel_box .table tr {
+    display: block;
+    margin: 0 0 30px 0;
+    border: 1px solid #dcdcdc;
+    width: 100%;
+    padding: 15px;
+    border-radius: 5px;
+  }
+
+  .panel_box .table tr:nth-last-child(1) {
+    margin-bottom: 0;
+  }
+
+  .panel_box .table td {
+    width: 100%;
+    display: block;
+    border: none;
+  }
+
+  .panel_box #list-group tr td::before {
+    margin-right: 10px;
+    display: block;
+    font-weight: 500;
+    color: #000000;
+  }
+
+  .panel_box #list-group tr td:nth-child(1):before {
+    content: '';
+  }
+
+  .panel_box #list-group tr td:nth-child(2):before {
+    /*content: 'รูปภาพ';*/
+    content: none;
+  }
+
+  .panel_box #list-group tr td:nth-child(3):before {
+    content: 'ชื่อสินค้า';
+  }
+
+  .panel_box #list-group tr td:nth-child(4):before {
+    content: 'Sku';
+  }
+
+  .panel_box #list-group tr td:nth-child(5):before {
+    content: 'รายละเอียด';
+  }
+
+  .panel_box #list-group tr td:nth-child(6):before {
+    content: 'ราคา';
+  }
+
+  .panel_box #list-group tr td:nth-child(7):before {
+    content: 'รายละเอียดการลดราคา';
+  }
+
+  .panel_box #list-group tr td:nth-child(8):before {
+    content: 'ราคาหลังลด';
+  }
+
+  .panel_box #list-group tr td:nth-child(9):before {
+    /*content: 'Action';*/
+    content: none;
+  }
+
+  .panel_box .table .avatar {
+    width: 100% !important;
+    margin-top: 5px;
+  }
+
+  .panel_box .table thead {
+    display: none;
+  }
+
+  .panel_box .table .avatar-online i {
+    width: 10px !important;
+  }
+
+  .panel_box .text-nowrap {
+    text-align: left;
+  }
+
+  .row_col2 .col-md-4 {
+    width: 80%;
+  }
+
+  .row_col2 .col-md-1 {
+    width: 20%;
+    max-width: inherit;
+  }
+}
+
+
+@media screen and (max-width: 768px) {
+  .row_col2 .col-md-3 {
+    width: 40%;
+    max-width: inherit;
+  }
+
+  .row_col2 .col-md-2 {
+    max-width: inherit;
+    width: 20%;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .col-md-4, .row_col2 .col-md-4, .row_col2 .col-md-1, .row_col2 .col-md-2, .row_col2 .col-md-3 {
+    width: 100%;
+  }
+
+  .text_null {
+    display: none;
+  }
+
+  .collapse:not(.show) {
+    display: none;
+  }
+
+  .panel_box .panel-heading {
+    display: block;
+  }
+
+  .panel_box .table td:nth-child(1) {
+    display: none;
+  }
+
+  .panel_box .table td {
+    padding: 0;
+  }
+
+  .panel_box .table .avatar {
+    margin: 0 0 15px;
+  }
+
+  .panel_box .table tr {
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-radius: 0;
+    background: none;
+    padding: 0 0 30px 0;
+  }
+
+  .panel_box .table tr:nth-child(even) {
+    background: none;
+  }
+
+  .panel_box .table td:nth-child(6), .panel_box .table td:nth-child(7) {
+    width: 50%;
+    float: left;
+  }
+
+  .hide_less .moreless_button {
+    display: block;
+    margin-top: 5px;
+
+  }
+
+  .panel_box .table .more_text1, .panel_box .table .more_text2 , .panel_box .table .more_text3 {
+    display: none;
+  }
+  .panel_box .avatar-online i{
+    margin: 5px!important;
+  }
+  .row_col2 hr{
+    margin: 0;
+    padding: 0;
+  }
+
+}
