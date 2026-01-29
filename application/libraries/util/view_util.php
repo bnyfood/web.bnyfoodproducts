@@ -93,27 +93,28 @@ class View_util
 
 		$arr_page_menus = $this->CI->menu_model->get_menu_by_group_id($user_id);
 
-		//print_r($arr_page_menus);
+	//print_r($arr_page_menus['Data']['data_menus']);
 
-		$data["arr_page_menus"]=$arr_page_menus['Data'];
+		$data["arr_page_menus"]=$arr_page_menus['Data']['data_menus'];
 
-		$arr_page_submenus = '';
+		/*$arr_page_submenus = '';
 
 		$arr_page_submenus = $this->CI->sub_menu_model->get_submenu_by_group_id($usergroup_id);
 
 		//print_r($arr_page_submenus);
 
 		$data["arr_page_submenus"]=$arr_page_submenus['Data'];
+		*/
 
 
 		/*print_r($data["arr_js"]);
 		print_r($data["arr_js_add"]);*/
 		
-		
+	
 			
 		//:[Load View Template]
 		$this->CI->load->view('template/main/header',$data); //template/header.php
-		$this->CI->load->view('template/main/menu_left');
+		$this->CI->load->view('template/main/menu_left',$data);
 		$this->CI->load->view($main_page);
 		$this->CI->load->view('template/main/modal');
 		$this->CI->load->view('template/main/footer');	
@@ -169,7 +170,7 @@ class View_util
 			
 		//:[Load View Template]
 		$this->CI->load->view('template/main/header',$data); //template/header.php
-		$this->CI->load->view('template/main/menu_left');
+		$this->CI->load->view('template/main/menu_left',$data);
 		$this->CI->load->view($main_page);
 		$this->CI->load->view('template/main/modal');
 		$this->CI->load->view('template/main/footer');	
