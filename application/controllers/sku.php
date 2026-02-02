@@ -25,6 +25,56 @@ class Sku extends CI_Controller
 		$this->_shop_id = $this->session->userdata('shop_id');
 
      }
+
+	private function filter_sort_skus($arr_skus, $sku_search, $sortby, $sorttype, $offset, $per_page)
+	{
+		$filtered = array();
+		$sku_search = trim($sku_search);
+
+		if(!empty($arr_skus)){
+			foreach ($arr_skus as $arr_sku){
+				if($sku_search === ''){
+					$filtered[] = $arr_sku;
+					continue;
+				}
+
+				$sku_name = !empty($arr_sku['sku_name']) ? $arr_sku['sku_name'] : '';
+				$sku_value = !empty($arr_sku['sku_value']) ? $arr_sku['sku_value'] : '';
+				if(stripos($sku_name, $sku_search) !== false || stripos($sku_value, $sku_search) !== false){
+					$filtered[] = $arr_sku;
+				}
+			}
+		}
+
+		if(!empty($sortby) && in_array($sortby, array('sku_name','sku_value'))){
+			usort($filtered, function($a, $b) use ($sortby, $sorttype) {
+				$val_a = !empty($a[$sortby]) ? $a[$sortby] : '';
+				$val_b = !empty($b[$sortby]) ? $b[$sortby] : '';
+				$result = strcasecmp($val_a, $val_b);
+				return ($sorttype === 'desc') ? ($result * -1) : $result;
+			});
+		}
+
+		$offset = intval($offset);
+		$per_page = intval($per_page);
+		$paged = array_slice($filtered, $offset, $per_page);
+
+		return array(
+			'filtered' => $filtered,
+			'paged' => $paged
+		);
+	}
+
+	private function encrypt_sku_ids($arr_skus)
+	{
+		if(!empty($arr_skus)){
+			$max = sizeof($arr_skus);
+			for($i=0;$i<$max;$i++){
+				$arr_skus[$i]['web_sku_id'] = $this->encryption_util->encrypt_ssl($arr_skus[$i]['web_sku_id']);
+			}
+		}
+		return $arr_skus;
+	}
      
 	public function sku_list()
 	{
@@ -34,20 +84,27 @@ class Sku extends CI_Controller
 
 		$ran_id = $this->uri->segment(3);
 		$shop_id = $this->session->userdata('shop_id');
-		$arr_skus = $this->sku_model->get_sku_by_shop_id($shop_id);
-		//print_r($arr_users);
-		if($arr_skus['Status'] == "Success"){
-			$max = sizeof($arr_skus['Data']);
+		$data_search = array(
+			'sku_search' => '',
+			'shopid_en' => $shop_id,
+			'sortby' => '',
+			'sorttype' => '',
+			'offset' => 0,
+			'per_page' => 5
+		);
 
-			for($i=0;$i<$max;$i++){
-				$arr_skus['Data'][$i]['web_sku_id'] = $this->encryption_util->encrypt_ssl($arr_skus['Data'][$i]['web_sku_id']);
-			}
+		$arr_skus = $this->sku_model->get_sku_by_shop_id($shop_id);
+		$list_data = array();
+		if($arr_skus['Status'] == "Success"){
+			$processed = $this->filter_sort_skus($arr_skus['Data'],'','', '',0,5);
+			$list_data = $this->encrypt_sku_ids($processed['paged']);
 		}
 		
 		$data = array(
-			'arr_skus' => $arr_skus['Data'],
+			'arr_skus' => $list_data,
 			'add_alt' => $add_alt,
-			'edit_alt' => $edit_alt
+			'edit_alt' => $edit_alt,
+			'data_search' => $data_search
 		);
 
 		//print_r($data);
@@ -57,13 +114,80 @@ class Sku extends CI_Controller
 		);
 		
 		$arr_js = array(
-        	'suk_main' => base_url()."resources/js/sku/suk_main.js"
+        	'suk_main' => base_url()."resources/js/sku/suk_main.js",
+			'morecontent' => base_url()."resources/js/morecontent/sku/sku_list.js",
+			'table_load_sort' => base_url()."resources/js/table_load_sort.js"
     	);
 		
 		
 		$this->view_util->load_view_main('sku/sku_list',$data,NULL,$arr_js,$arr_input,MENU_CONFIG_USER);
 
 	} 
+
+	public function sku_list_search()
+	{
+		$add_alt = $this->session->flashdata('add_user');
+		$edit_alt = $this->session->flashdata('edit_user');
+		$shop_id = $this->session->userdata('shop_id');
+		$sku_search = $this->input->post('sku_search');
+		$sortby = $this->input->post('sortby');
+		$sorttype = $this->input->post('sorttype');
+
+		$data_search = array(
+			'sku_search' => $sku_search,
+			'shopid_en' => $shop_id,
+			'sortby' => $sortby,
+			'sorttype' => $sorttype,
+			'offset' => 0,
+			'per_page' => 5
+		);
+
+		$arr_skus = $this->sku_model->get_sku_by_shop_id($shop_id);
+		$list_data = array();
+		if($arr_skus['Status'] == "Success"){
+			$processed = $this->filter_sort_skus($arr_skus['Data'],$sku_search,$sortby,$sorttype,0,5);
+			$list_data = $this->encrypt_sku_ids($processed['paged']);
+		}
+
+		$data = array(
+			'arr_skus' => $list_data,
+			'add_alt' => $add_alt,
+			'edit_alt' => $edit_alt,
+			'data_search' => $data_search
+		);
+
+		$arr_input = array(
+			'title' => "Config Sku"
+		);
+		
+		$arr_js = array(
+        	'suk_main' => base_url()."resources/js/sku/suk_main.js",
+			'morecontent' => base_url()."resources/js/morecontent/sku/sku_list.js",
+			'table_load_sort' => base_url()."resources/js/table_load_sort.js"
+    	);
+		
+		$this->view_util->load_view_main('sku/sku_list',$data,NULL,$arr_js,$arr_input,MENU_CONFIG_USER);
+	}
+
+	function loaddata_more_ajax(){
+		$shop_id = $this->session->userdata('shop_id');
+		$sku_search = $this->input->post('sku_search');
+		$offset = $this->input->post('offset');
+		$sortby = $this->input->post('sortby');
+		$sorttype = $this->input->post('sorttype');
+
+		$arr_skus = $this->sku_model->get_sku_by_shop_id($shop_id);
+		$list_data = array();
+		if($arr_skus['Status'] == "Success"){
+			$processed = $this->filter_sort_skus($arr_skus['Data'],$sku_search,$sortby,$sorttype,$offset,5);
+			$list_data = $this->encrypt_sku_ids($processed['paged']);
+		}
+
+		$arr_data = array(
+			'list_data' => $list_data
+		);
+		echo json_encode($arr_data);
+	}
 
 	function add_sku_form(){
 
@@ -111,7 +235,7 @@ class Sku extends CI_Controller
 		);  
 
 		
-		$this->view_util->load_view_blankpage('sku/add_sku_form',$data,NULL,$arr_js,$arr_input,MENU_CONFIG_USER);
+		$this->view_util->load_view_main('sku/add_sku_form',$data,NULL,$arr_js,$arr_input,MENU_CONFIG_USER);
 	}
 
 	function add_sku_form_search(){
@@ -175,7 +299,7 @@ class Sku extends CI_Controller
 		);  
 
 		
-		$this->view_util->load_view_blankpage('sku/add_sku_form',$data,NULL,$arr_js,$arr_input,MENU_CONFIG_USER);
+		$this->view_util->load_view_main('sku/add_sku_form',$data,NULL,$arr_js,$arr_input,MENU_CONFIG_USER);
 	}
 
 	function sku_add_ajax(){
