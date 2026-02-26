@@ -248,15 +248,26 @@ class Material extends CI_Controller
 		$sub_unit = $this->input->post('sub_unit');
 		$material_name = $this->input->post('material_name');
 		$material_sku = $this->input->post('material_sku');
+		$gennewsku = $this->input->post('gennewsku');
 		$web_category_id = $this->input->post('web_category_id');
 		$web_material_brand_id = $this->input->post('web_material_brand_id');
 		$material_size = $this->input->post('material_size');
-		$material_unit = $this->input->post('material_unit');
+
+		$material_unit_val = $this->input->post('material_unit');
+		$arr_material_unit = explode("_",$material_unit_val);
+		$material_unit = $arr_material_unit[0];
+		$material_unit_txt = $arr_material_unit[1];
+
 		$material_unit_price = $this->input->post('material_unit_price');
 		$description = $this->input->post('description');
 		$ran_num_sup = $this->input->post('ran_num_sup');
 		$material_density = $this->input->post('material_density');
+
 		$web_material_subunit_type_id = $this->input->post('web_material_subunit_type_id');
+		$arr_material_subunit_type_val = explode("_",$web_material_subunit_type_id);
+		$web_material_subunit_type_id = $arr_material_subunit_type_val[0];
+		$web_material_subunit_type_txt = $arr_material_subunit_type_val[1];
+
 		$main_web_material_subunit_type_id = $this->input->post('main_web_material_subunit_type_id');
 		//$web_material_unit_type_history_id = $this->input->post('web_material_unit_type_history_id');
 		$subunit_qty = $this->input->post('subunit_qty');
@@ -279,6 +290,16 @@ class Material extends CI_Controller
 			}
 		}
 
+		if($sub_unit ==2){
+
+			$newsku = $material_sku.$material_size.$material_unit_txt.$web_material_subunit_type_txt."x1";
+
+		}elseif($sub_unit == 1){
+			$newsku = $gennewsku.$web_material_subunit_type_txt."x".$subunit_qty;
+		}
+
+		//echo ">>>".$newsku."<<<";
+
 		$data_curl = array(
 			'sub_unit' => $sub_unit,
 			'arr_curl' => $arr_curl,
@@ -298,7 +319,8 @@ class Material extends CI_Controller
 			'ran_num_sup' => $ran_num_sup,
 			'price_set' => $price_set,
 			'material_density' => $material_density,
-			'subunit_qty' => $subunit_qty
+			'subunit_qty' => $subunit_qty,
+			'newsku' => $newsku
 		);
 
 		//print_r($data_curl);
@@ -315,6 +337,7 @@ class Material extends CI_Controller
 		}
 
 		redirect(base_url().'manufacture/material/material_list','refresh');
+		
 	}
 
 	function edit_material_form(){

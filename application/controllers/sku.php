@@ -203,7 +203,6 @@ class Sku extends CI_Controller
         	'touchspin' => base_url()."global/vendor/bootstrap-touchspin/bootstrap-touchspin.min.js",
         	'bootstrap_touchspin' => base_url()."global/js/Plugin/bootstrap-touchspin.js",
         	'sku_script' => base_url()."resources/js/sku/sku_script.js"
-
     	);
 
     	$arr_search = array(

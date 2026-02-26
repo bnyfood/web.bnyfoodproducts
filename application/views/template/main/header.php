@@ -19,6 +19,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     <link rel="stylesheet" href="<?php echo base_url();?>global/css/bootstrap.css">
     <link rel="stylesheet" href="<?php echo base_url();?>global/css/bootstrap-extend.css">
     <link rel="stylesheet" href="<?php echo base_url();?>resources/theme/css/style_main.css">
+    <link rel="stylesheet" href="<?php echo base_url();?>resources/css/style_addon.css">
 
     <link rel="stylesheet" href="<?php echo base_url();?>global/fonts/web-icons/web-icons.min.css">
 

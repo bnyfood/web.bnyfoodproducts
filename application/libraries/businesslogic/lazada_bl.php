@@ -160,8 +160,8 @@ class lazada_bl
                     //print_r($rowData);
                     $createtime = $rowData[0][8];
                     $order_sn = $rowData[0][12];
-                    $paidPrice = $rowData[0][46];
-                    $shippingFee = $rowData[0][49];
+                    $paidPrice = $rowData[0][46]; //AU
+                    $shippingFee = $rowData[0][49]; //AX
                     $status = $rowData[0][65];
                     $initiator = $rowData[0][66];
                     $cancel_reason = $rowData[0][67];
@@ -306,10 +306,9 @@ class lazada_bl
 
       $arr_datas = $this->CI->lazada_orders_model->getOrderbyDateStartDateEndGroupbyDate($StartDate,$EndDate);
       //print_r($arr_datas);
-
         foreach($arr_datas as $arr_data){
 
-          $ref_price = $arr_data["price"] - $arr_data["voucher_seller"];
+          $ref_price = $arr_data["price"] - $arr_data["voucher"];
           $sum_ref_price = $sum_ref_price + $ref_price;
           $shipping_fee = $shipping_fee + $arr_data['shipping_fee'];
 
@@ -395,7 +394,7 @@ class lazada_bl
         $num  = 1;
         foreach($arr_datas as $arr_data){
 
-          $ref_price = $arr_data["price"] - $arr_data["voucher_seller"];
+          $ref_price = $arr_data["price"] - $arr_data["voucher"] + $arr_data["shipping_fee"];
 
           $diffprice = $arr_data['paid_price']-$ref_price;
 

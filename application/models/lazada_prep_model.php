@@ -86,7 +86,7 @@ class lazada_prep_model extends CI_Model
 	}	
 
 	function select_by_complete_all($code){
-		$this->db->select('sum(paid_price)+sum(shippingFee) as sum_sale');
+		$this->db->select('sum(paid_price) as sum_sale');
 		$this->db->from('lazada_prep');
 		$this->db->where('code',$code);
 		$query = $this->db->get();

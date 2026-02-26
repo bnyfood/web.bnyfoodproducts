@@ -13,7 +13,7 @@ document.getElementById("cate-list").addEventListener("click", function (e) {
 
   	parent_cat = e.target.value
     
-    var urls = 'http://'+window.location.hostname+"/"+pahth_project+"webcategory/category_get_by_id";
+    var urls = hostname_site+"/webcategory/category_get_by_id";
 
     $.ajax({
       type: "POST",
@@ -110,9 +110,9 @@ $("#shop_sel").change(function(event) {
     shop_id = $(this).val();
 
     var arr_path = window.location.pathname.split("/");
-        var urls = 'http://'+window.location.hostname+"/"+arr_path[1]+"/"+"webcategory/set_shop_search/"+shop_id;
+        var urls = hostname_site+"/webcategory/set_shop_search/"+shop_id;
 
         window.location.href = urls;
 
-  });
+    });
 });

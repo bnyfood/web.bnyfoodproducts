@@ -24,6 +24,7 @@
                       <th>Link</th>
                       <th>Icon</th>
                       <th>ลำดับ</th>
+                      <th>เพิ่ม/ลด เมนูย่อย</th>
                       <th>แสดงที่ลูกค้า</th>
                       <th class="text-nowrap">จัดการ</th>
                     </tr>
@@ -38,6 +39,9 @@
                         <td><?php echo $arr_menu['link']?></td>
                         <td><?php echo $arr_menu['icon']?></td>
                         <td><?php echo $arr_menu['sort']?></td>
+                        <td>
+                          <a href="<?php echo base_url();?>config_system/menu/sub_menu_lv3_list/<?php echo $parentid;?>/<?php echo $arr_menu['menu_id'];?>" > เมนูย่อย </a>
+                        </td>
                         <td><?php if($arr_menu['show_customer'] == 1){echo "<span class='counter-icon green-600'><i class='fa fa-check'></i></span>";}else{echo "<span class='counter-icon red-600'><i class='fa fa-check'></i></span>";}?></td>
                         <td class="text-nowrap">
                           <a href="<?php echo base_url();?>config_system/menu/sub_menu_edit_form/<?php echo $arr_menu['menu_id'];?>/<?php echo $parentid;?>" data-toggle="tooltip" data-original-title="Edit"> 

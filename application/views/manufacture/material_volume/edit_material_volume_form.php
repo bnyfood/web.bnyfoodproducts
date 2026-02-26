@@ -4,13 +4,14 @@
     <div class="page-header-actions">
     </div>
   </div>
-  <div class="page-content">
-    <div class="panel">
-      <div class="panel-body container-fluid">
+  <div class="page-content" style="margin-right: 10px; margin-left: 10px;">
+    <div class="panel panel_box" style="margin-bottom:20px;margin-top:20px;">
+      <div class="panel-body" style="background:#fff; border-radius:7px; padding-bottom:40px;">
         <form role="form" name="user_edit_form" id="user_edit_form" action="<?php echo base_url()."manufacture/material_volume/material_volume_edit";?>" method="post" enctype="multipart/form-data">
           <div class="row row-lg">
             <div class="col-md-12 col-lg-6">
               <div class="example-wrap">
+                <h4 class="example-title">ข้อมูล Material Volume</h4>
                 <div class="example">
 
                   <div class="form-group row">
@@ -155,7 +156,7 @@
                   
                   <div class="form-group">
                     <input type="hidden" name="material_volume_id_en" value="<?php echo $material_volume_id_en?>">
-                    <a href="<?php echo base_url();?>config_system/users/user_list" id="addToTable" class="btn btn-outline btn-primary" >
+                    <a href="<?php echo base_url();?>manufacture/material_volume/material_volume_list" id="addToTable" class="btn btn-outline btn-primary" >
                       <i class="icon wb-arrow-left" aria-hidden="true"></i> กลับ
                     </a>
                     <button type="submit" class="btn btn-primary">Submit</button>

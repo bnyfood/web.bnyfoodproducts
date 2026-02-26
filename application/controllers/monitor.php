@@ -3,7 +3,7 @@
 /**
 ** [C]Member Controller : is controller about Member of phuketgoodjob.
 **/
-class Monitor extends CI_Controller
+class Monitor extends Auth_Controller
 {
 
     function __construct()
@@ -19,7 +19,6 @@ class Monitor extends CI_Controller
 		$this->load->model('menu_model');
 		$this->load->model('bnylog_model');
 
-        //$this->auth_bl->check_session_exists();
 
     }
      

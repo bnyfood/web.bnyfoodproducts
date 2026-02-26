@@ -4,7 +4,7 @@
     <div class="page-header-actions">
     </div>
   </div>
-  <div class="page-content" style="margin-right: 10px">
+  <div class="page-content" style="margin-right: 10px; margin-left: 10px;">
     <div class="panel panel_box" style="margin-bottom:20px;margin-top:20px;">
       <div class="panel-body" style="background:#fff; border-radius:7px;">
         <div class="example-wrap">

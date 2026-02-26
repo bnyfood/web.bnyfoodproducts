@@ -3,7 +3,7 @@
 /**
 ** [C]Member Controller : is controller about Member of phuketgoodjob.
 **/
-class Product extends CI_Controller
+class Product extends Auth_Controller
 {
 
     function __construct()
@@ -20,7 +20,6 @@ class Product extends CI_Controller
 		$this->load->library('businesslogic/upload_bl');
 		$this->load->library('pagination');
 
-        $this->auth_bl->check_session_exists();
 
      }
      

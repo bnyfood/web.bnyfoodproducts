@@ -189,8 +189,7 @@ class Webcategory extends CI_Controller
 		$arr_js = array(
 			'validate' => base_url()."assets/js/jquery.validate.min.js",	
         	'manage_cat' => base_url()."resources/js/validate/manage_cat.js",
-        	'category_manage' => base_url()."resources/js/category/webcategory_manage.js",
-
+        	'category_manage' => base_url()."resources/js/category/webcategory_manage.js"
     	);
 
     	$data = array(

@@ -90,6 +90,66 @@ class Brand extends CI_Controller
 
 	} 
 
+	public function brand_list_search()
+	{
+		$add_alt = $this->session->flashdata('add_brand');
+		$edit_alt = $this->session->flashdata('edit_brand');
+		$from_pop = $this->uri->segment(4);
+		if($from_pop == ""){
+			$from_pop = 0;
+		}
+		$sess_shop_id = $this->session->userdata(SESSION_PREFIX.'shop_id');
+		$brand_search = $this->input->post('brand_search');
+		$sortby = $this->input->post('sortby');
+		$sorttype = $this->input->post('sorttype');
+
+		$data_search = array(
+			'brand_search' => $brand_search,
+			'shopid_en' => $sess_shop_id,
+			'sortby' => $sortby,
+			'sorttype' => $sorttype,
+			'offset' => 1,
+			'per_page' => 5
+		);
+
+		$arr_brands = $this->curl_bl->CallApi('POST','manufacture/brand/loaddata_more',$data_search);
+
+		if($arr_brands['Status'] == "Success"){
+			$max = sizeof($arr_brands['Data']);
+
+			for($i=0;$i<$max;$i++){
+				$arr_brands['Data'][$i]['web_material_brand_id'] = $this->encryption_util->encrypt_ssl($arr_brands['Data'][$i]['web_material_brand_id']);
+			}
+		}
+
+		$data = array(
+			'arr_brands' => $arr_brands['Data'],
+			'add_alt' => $add_alt,
+			'edit_alt' => $edit_alt,
+			'from_pop' => $from_pop,
+			'data_search' => $data_search
+		);
+
+		$arr_input = array(
+			'title' => "Brand"
+		);
+
+		$arr_js = array(
+			'morecontent' => base_url()."resources/js/morecontent/manufacture/brand_list.js",
+			'table_load_sort' => base_url()."resources/js/table_load_sort.js"
+		);
+
+		$arr_css = array(
+			'site_new' => base_url()."assets/css/site_new.css"
+		);
+
+		if($from_pop == 1){
+			$this->view_util->load_view_blankpage('manufacture/brand/brand_list',$data,$arr_css,$arr_js,$arr_input,MENU_MANUFACTURE_BRAND);
+		}else{
+			$this->view_util->load_view_main('manufacture/brand/brand_list',$data,$arr_css,$arr_js,$arr_input,MENU_MANUFACTURE_BRAND);
+		}
+	}
+
 	function add_brand_form(){
 
 		$from_pop = $this->uri->segment(4);

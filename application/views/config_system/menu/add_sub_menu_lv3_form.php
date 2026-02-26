@@ -45,7 +45,7 @@
                     </div>
                   </div>
                   <div class="form-group">
-                    <a href="<?php echo base_url();?>config_system/menu/sub_menu_list" id="addToTable" class="btn btn-outline btn-primary" >
+                    <a href="<?php echo base_url();?>config_system/menu/sub_menu_lv3_list/<?php echo $parentid_en;?>/<?php echo $id_lv2_en;?>" id="addToTable" class="btn btn-outline btn-primary" >
                       <i class="icon wb-arrow-left" aria-hidden="true"></i> กลับ
                     </a>
                     <input type="hidden" name="parentid_en" value="<?php echo $parentid_en;?>">

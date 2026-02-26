@@ -9,10 +9,10 @@
 }
 </style>
 <div class="page">
-  <div class="page-content container-fluid">
+  <div class="page-content" style="margin-right: 10px; margin-left: 10px;">
 
     <div class="row">
-      <div class="col-lg-5 col-xl-6 push-xl-3">
+      <div class="col-lg-12 col-xl-12">
         <?php if($add_alt == "success"){?>
           <div class="alert alert-success alert-dismissible" role="alert">
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -37,8 +37,8 @@
             แก้ไขหมวดหมู่สำเร็จ
           </div>
         <?php }?> 
-        <div class="card user-visitors">
-          <div class="card-header card-header-transparent p-20">
+        <div class="panel panel_box" style="margin-bottom:20px;margin-top:20px;">
+          <div class="panel-body" style="background:#fff; border-radius:7px; padding:20px;">
             <h4 class="card-title mb-0">ร้านค้า</h4>
               <div class="col-md-6">
                 <div class="mb-15">
@@ -81,9 +81,9 @@
           </div>
         </div>
       </div>
-      <div class="col-lg-7 col-xl-6 push-xl-3" id="div_manage_cat" style="display: none">
-        <div class="card user-visitors">
-          <div class="card-header card-header-transparent p-20">
+      <div class="col-lg-12 col-xl-12" id="div_manage_cat" style="display: none">
+        <div class="panel panel_box" style="margin-bottom:20px;margin-top:20px;">
+          <div class="panel-body" style="background:#fff; border-radius:7px; padding:20px;">
 
             <h4 class="card-title mb-0" id="manage_cat_txt" style="padding: 0px 0px 10px 0px;"></h4>
             <h4 class="card-title mb-0" id="manage_main_cat_txt" style="padding: 0px 0px 10px 0px;display: none"></h4>

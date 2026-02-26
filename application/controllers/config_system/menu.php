@@ -3,7 +3,7 @@
 /**
 ** [C]Member Controller : is controller about Member of phuketgoodjob.
 **/
-class Menu extends CI_Controller
+class Menu extends Auth_Controller
 {
 
     function __construct()
@@ -14,7 +14,6 @@ class Menu extends CI_Controller
 		$this->load->library('util/View_util');
 		$this->load->library('util/encryption_util');
 		
-       	$this->auth_bl->check_session_exists();
 		
      }
 
@@ -352,7 +351,6 @@ class Menu extends CI_Controller
 		$arr_js = array(
         	'init_main' => base_url()."resources/js/init/main.js"
     	);
-		
 		
 		$this->view_util->load_view_main('config_system/menu/sub_menu_lv3_list',$data,NULL,NULL,$arr_input,MENU_CONFIG_MENU);
 

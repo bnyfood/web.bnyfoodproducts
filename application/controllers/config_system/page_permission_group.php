@@ -3,7 +3,7 @@
 /**
 ** [C]Member Controller : is controller about Member of phuketgoodjob.
 **/
-class Page_permission_group extends CI_Controller
+class Page_permission_group extends Auth_Controller
 {
 
     function __construct()
@@ -20,7 +20,6 @@ class Page_permission_group extends CI_Controller
 		$this->load->model('user_group_model');
 		$this->load->model('group_map_controller_model');
 
-		$this->auth_bl->check_session_exists();
 
      }
      

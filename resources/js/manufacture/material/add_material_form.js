@@ -11,9 +11,9 @@ class UI_subunit {
 	    <td>${data.material_brand_name}</td>
 	    <td>${data.unit_type_name}</td>
 	    <td>${data.subunit_volume_v} ${data.unit_type_name_v}</td>
-	    <td>${data.sku_name}</td>
+	    <td>${data.sku}</td>
 	    <td>
-	    <input type="radio" presku='${data.sku_name}' name="web_material_subunit_id" id="web_material_subunit_id" value="${data.web_material_id_main}_${data.web_material_subunit_id}">
+	    <input type="radio" presku='${data.sku}' name="web_material_subunit_id" id="web_material_subunit_id" value="${data.web_material_id_main}_${data.web_material_subunit_id}">
 	    </td>
 	    `;
 
@@ -28,7 +28,6 @@ class UI_subunit {
 	  }
 
 	}
-
 
 	function displayUnit(is_all) {
 
@@ -73,7 +72,6 @@ class UI_subunit {
 
 	});
 
-
 	$('input[name=sub_unit]').change(function(){
 		var sub_unit_type = $( 'input[name=sub_unit]:checked' ).val();
 		//alert(account_type);
@@ -104,7 +102,9 @@ class UI_subunit {
      
      document.getElementById("newsku").innerHTML = "";
      document.getElementById("newsku").innerHTML = presku;
-
+	
+	 $("#gennewsku").val('');
+	 $("#gennewsku").val(presku);
 
 	});
 

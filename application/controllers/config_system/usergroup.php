@@ -3,7 +3,7 @@
 /**
 ** [C]Member Controller : is controller about Member of phuketgoodjob.
 **/
-class Usergroup extends CI_Controller
+class Usergroup extends Auth_Controller
 {
 
     function __construct()
@@ -22,7 +22,6 @@ class Usergroup extends CI_Controller
 		$this->load->model('user_model');
 		$this->load->model('web_shop_model');
 
-        $this->auth_bl->check_session_exists();
      }
      
 	public function usergroup_list()
@@ -258,7 +257,6 @@ class Usergroup extends CI_Controller
 		$data_groupmenus = $this->curl_bl->CallApi('GET','menu/get_menu_all');
 		//print_r($data_groupmenus);
 		$arr_groupmenu = $this->curl_bl->CallApi('GET','config_system/usergroup/get_menu_select_by_group/'.$id_en);
-
 
        	$arr_menu_select = $this->data_bl->create_arr_id($arr_groupmenu['Data'],'menu_id');
    		

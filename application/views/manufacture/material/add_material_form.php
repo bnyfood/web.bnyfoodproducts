@@ -4,9 +4,9 @@
     <div class="page-header-actions">
     </div>
   </div>
-  <div class="page-content">
-    <div class="panel">
-      <div class="panel-body container-fluid">
+  <div class="page-content" style="margin-right: 10px; margin-left: 10px;">
+    <div class="panel panel_box" style="margin-bottom:20px;margin-top:20px;">
+      <div class="panel-body" style="background:#fff; border-radius:7px; padding-bottom:40px;">
         <form role="form" name="user_add_form" id="user_add_form" action="<?php echo base_url()."manufacture/material/material_add";?>" method="post">
           <div class="row row-lg">
             <div class="col-md-12 col-lg-6">
@@ -45,7 +45,7 @@
                               <?php 
                                 foreach($arr_units as $arr_unit){
                               ?>
-                              <option value="<?php echo $arr_unit['web_material_unit_id']?>" ><?php echo $arr_unit['material_unit']?></option>
+                              <option value="<?php echo $arr_unit['web_material_unit_id']."_".$arr_unit['material_unit']?>" ><?php echo $arr_unit['material_unit']?></option>
                               <?php }?> 
                             </select>  
                           </div>
@@ -63,7 +63,7 @@
                              </select> 
                             </div>
                         </div>
-                        
+                      
                         <div class="form-group row">
                           <label class="col-md-2 col-form-label">ความหนาแน่น : </label>
                           <div class="col-md-6">
@@ -102,7 +102,7 @@
                               <?php 
                                 foreach($arr_unit_types as $arr_unit_type){
                               ?>
-                              <option value="<?php echo $arr_unit_type['web_material_unit_type_id']?>" ><?php echo $arr_unit_type['unit_type_name']?></option>
+                              <option value="<?php echo $arr_unit_type['web_material_unit_type_id']."_".$arr_unit_type['unit_type_name_en'];?>" ><?php echo $arr_unit_type['unit_type_name']?></option>
                               <?php }?> 
                             </select> 
                           </div>
@@ -117,6 +117,7 @@
                             <input type="button" class="btn btn-primary" name="btn_sub_unit_search_all" id="btn_sub_unit_search_all" value="All">
                           </div>
                         </div>
+                        <div style="margin-top:20px;"></div>
                         <table class="table table-bordered">
                           <thead>
                             <tr>
@@ -135,8 +136,8 @@
                         <div class="form-row flex-nowrap">
                           <label class="col-md-2 col-form-label">SKU : </label>
                           <div class="col-md-1" id="newsku">
-                            
                           </div>
+                          <input type="hidden" name="gennewsku" id="gennewsku">
                         </div>
 
                         <div class="form-row flex-nowrap">
@@ -164,7 +165,7 @@
                   
 
 
-                  <div class="form-group">
+                  <div class="form-group" style="margin-bottom:30px;">
                     <a href="<?php echo base_url();?>manufacture/material/material_list" id="addToTable" class="btn btn-outline btn-primary" >
                       <i class="icon wb-arrow-left" aria-hidden="true"></i> กลับ
                     </a>

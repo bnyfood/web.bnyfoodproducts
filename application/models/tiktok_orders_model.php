@@ -151,7 +151,7 @@ class Tiktok_orders_model extends CI_Model
 		$this->db->order_by('create_time','asc');
 		$this->db->limit($limit);
 		$query = $this->db->get();
-		//echo $this->db->last_query();
+		echo $this->db->last_query();
 		return $query->result_array();
 
 	}

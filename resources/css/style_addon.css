@@ -1,4 +1,6 @@
-.help-block{
+.help-block,
+label.error,
+span.error {
 	color: #ff0000 !important;
 }
 

@@ -191,7 +191,7 @@ class Tiktok extends CI_Controller
             $start_time = strtotime($arr_last_order['create_time']);
         }
 
-        //echo ">>".$arr_last_order['create_time'].">>".$start_time."<<";
+        echo ">>".$arr_last_order['create_time'].">>".$start_time."<<";
 
         $bodys = array(
             //'order_status' => 'COMPLETED',
@@ -2064,7 +2064,6 @@ class Tiktok extends CI_Controller
             if(empty($arr_chk_or)){
                 $arr_lastorder = $this->tiktok_taxinvoiceid_model->last_order_code_by_yymm($arr_sho_tax['yyyymm']);   
                 //print_r($arr_lastorder);
-
                if(!empty($arr_lastorder)){
 
                  $new_textinvoiceID = $this->tiktok_bl->get_tiktok_code($arr_lastorder['taxinvoiceID'],$arr_sho_tax['create_time']);  

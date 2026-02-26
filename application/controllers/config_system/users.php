@@ -3,7 +3,7 @@
 /**
 ** [C]Member Controller : is controller about Member of phuketgoodjob.
 **/
-class Users extends CI_Controller
+class Users extends Auth_Controller
 {
 
     function __construct()
@@ -18,7 +18,6 @@ class Users extends CI_Controller
 
 		$this->load->model('user_model');
 
-		$this->auth_bl->check_session_exists();
 
      }
      

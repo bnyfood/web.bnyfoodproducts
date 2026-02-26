@@ -24,7 +24,7 @@
                   </span>
                   </a>
                   <div aria-labelledby="heading1" role="tabpanel" class="panel-collapse collapse" id="collapse1"
-                       aria-expanded="false">
+                     aria-expanded="false">
                     <div class="panel-body">
                       <h4 class="example-title">ค้นหาสินค้า</h4>
                       <div class="row_col">

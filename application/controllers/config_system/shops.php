@@ -3,7 +3,7 @@
 /**
 ** [C]Member Controller : is controller about Member of phuketgoodjob.
 **/
-class Shops extends CI_Controller
+class Shops extends Auth_Controller
 {
 
 	protected $_customer_code;
@@ -21,8 +21,6 @@ class Shops extends CI_Controller
 		$this->load->library('util/encryption_util');
 
 		$this->load->model('web_shop_model');
-
-        $this->auth_bl->check_session_exists();
 
         $this->_customer_code = $this->session->userdata(SESSION_PREFIX.'customer_code');
      }

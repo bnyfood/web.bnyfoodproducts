@@ -72,7 +72,6 @@ class Material_volume extends CI_Controller
 		
 		$arr_js = array(
         	'morecontent' => base_url()."resources/js/morecontent/manufacture/material_volume_list.js",
-        	'material_list' => base_url()."resources/js/manufacture/material_volume/material_list.js",
         	'table_load_sort' => base_url()."resources/js/table_load_sort.js"
     	);
 		
@@ -105,7 +104,7 @@ class Material_volume extends CI_Controller
 		);
 		
 		$arr_js = array(
-			
+		
 			'jquery1.8.3' => base_url().'global/vendor/jquery/jquery-1.8.3.js',
 			'multi-select_js' => base_url().'global/vendor/multi-select/jquery.multi-select.js',
 			'fancybox' => base_url().'resources/fancybox/jquery.fancybox-1.3.4.js',
