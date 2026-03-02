@@ -27,7 +27,15 @@ class Users extends Auth_Controller
 		$edit_alt = $this->session->flashdata('edit_user');
 		//echo $add_alt;
 		$customer_code = $this->session->userdata('customer_code');
-		$arr_users = $this->user_model->get_users_by_code($customer_code);
+		$data_search = array(
+			'user_search' => '',
+			'customer_code' => $customer_code,
+			'sortby' => '',
+			'sorttype' => '',
+			'offset' => 1,
+			'per_page' => 5
+		);
+		$arr_users = $this->curl_bl->CallApi('POST','config_system/users/user_search',$data_search);
 		//print_r($arr_users);
 		if($arr_users['Status'] == "Success"){
 			$max = sizeof($arr_users['Data']);
@@ -40,7 +48,8 @@ class Users extends Auth_Controller
 		$data = array(
 			'arr_users' => $arr_users['Data'],
 			'add_alt' => $add_alt,
-			'edit_alt' => $edit_alt
+			'edit_alt' => $edit_alt,
+			'data_search' => $data_search
 		);
 
 		//print_r($data);
@@ -50,13 +59,95 @@ class Users extends Auth_Controller
 		);
 		
 		$arr_js = array(
-        	'init_main' => base_url()."resources/js/init/main.js"
+			'morecontent' => base_url()."resources/js/morecontent/config_system/user_list.js",
+			'table_load_sort' => base_url()."resources/js/table_load_sort.js"
     	);
 		
 		
-		$this->view_util->load_view_main('config_system/users/user_list',$data,NULL,NULL,$arr_input,MENU_CONFIG_USER);
+		$this->view_util->load_view_main('config_system/users/user_list',$data,NULL,$arr_js,$arr_input,MENU_CONFIG_USER);
 
 	} 
+
+	public function user_list_search()
+	{
+		$add_alt = $this->session->flashdata('add_user');
+		$edit_alt = $this->session->flashdata('edit_user');
+		$customer_code = $this->session->userdata('customer_code');
+		$user_search = $this->input->post('user_search');
+		$sortby = $this->input->post('sortby');
+		$sorttype = $this->input->post('sorttype');
+
+		$data_search = array(
+			'user_search' => $user_search,
+			'customer_code' => $customer_code,
+			'sortby' => $sortby,
+			'sorttype' => $sorttype,
+			'offset' => 1,
+			'per_page' => 5
+		);
+
+		$arr_users = $this->curl_bl->CallApi('POST','config_system/users/user_search',$data_search);
+
+		if($arr_users['Status'] == "Success"){
+			$max = sizeof($arr_users['Data']);
+
+			for($i=0;$i<$max;$i++){
+				$arr_users['Data'][$i]['BNYCustomerID'] = $this->encryption_util->encrypt_ssl($arr_users['Data'][$i]['BNYCustomerID']);
+			}
+		}
+
+		$data = array(
+			'arr_users' => $arr_users['Data'],
+			'add_alt' => $add_alt,
+			'edit_alt' => $edit_alt,
+			'data_search' => $data_search
+		);
+
+		$arr_input = array(
+			'title' => "Config User"
+		);
+
+		$arr_js = array(
+			'morecontent' => base_url()."resources/js/morecontent/config_system/user_list.js",
+			'table_load_sort' => base_url()."resources/js/table_load_sort.js"
+    	);
+
+		$this->view_util->load_view_main('config_system/users/user_list',$data,NULL,$arr_js,$arr_input,MENU_CONFIG_USER);
+	}
+
+	function loaddata_more_ajax(){
+
+		$customer_code = $this->session->userdata('customer_code');
+		$user_search = $this->input->post('user_search');
+		$offset = $this->input->post('offset');
+		$sortby = $this->input->post('sortby');
+		$sorttype = $this->input->post('sorttype');
+
+		$data = array(
+			'user_search' => $user_search,
+			'customer_code' => $customer_code,
+			'sortby' => $sortby,
+			'sorttype' => $sorttype,
+			'offset' => $offset,
+			'per_page' => 5
+		);
+
+		$arr_users = $this->curl_bl->CallApiNospi('POST','config_system/users/user_search',$data);
+
+		if($arr_users['Status'] == "Success"){
+			$max = sizeof($arr_users['Data']);
+
+			for($i=0;$i<$max;$i++){
+				$arr_users['Data'][$i]['BNYCustomerID'] = $this->encryption_util->encrypt_ssl($arr_users['Data'][$i]['BNYCustomerID']);
+			}
+		}
+
+		$arr_data = array(
+			'list_data' => $arr_users['Data']
+		);
+		echo json_encode($arr_data);
+
+	}
 
 	function add_user_form(){
 
