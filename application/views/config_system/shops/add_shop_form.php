@@ -4,12 +4,11 @@
     <div class="page-header-actions">
     </div>
   </div>
-  <div class="page-content">
-    <div class="panel">
-      <div class="panel-body container-fluid">
+  <div class="page-content" style="margin-right: 10px; margin-left: 10px;">
+    <div class="panel panel_box" style="margin-bottom:20px;margin-top:20px;">
+      <div class="panel-body" style="background:#fff; border-radius:7px; padding-bottom:40px;">
         <div class="row row-lg">
           <div class="col-md-12 col-lg-6">
-            <!-- Example Basic Form Without Label -->
             <div class="example-wrap">
               <h4 class="example-title">Shop</h4>
               <div class="example">

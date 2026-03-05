@@ -26,7 +26,9 @@ class Users extends Auth_Controller
 		$add_alt = $this->session->flashdata('add_user');
 		$edit_alt = $this->session->flashdata('edit_user');
 		//echo $add_alt;
-		$customer_code = $this->session->userdata('customer_code');
+		$customer_code = $this->session->userdata(SESSION_PREFIX.'customer_code');
+
+		//echo "cus>>>>".$customer_code."<<<<";
 		$data_search = array(
 			'user_search' => '',
 			'customer_code' => $customer_code,
@@ -72,7 +74,7 @@ class Users extends Auth_Controller
 	{
 		$add_alt = $this->session->flashdata('add_user');
 		$edit_alt = $this->session->flashdata('edit_user');
-		$customer_code = $this->session->userdata('customer_code');
+		$customer_code = $this->session->userdata(SESSION_PREFIX.'customer_code');
 		$user_search = $this->input->post('user_search');
 		$sortby = $this->input->post('sortby');
 		$sorttype = $this->input->post('sorttype');
@@ -117,7 +119,7 @@ class Users extends Auth_Controller
 
 	function loaddata_more_ajax(){
 
-		$customer_code = $this->session->userdata('customer_code');
+		$customer_code = $this->session->userdata(SESSION_PREFIX.'customer_code');
 		$user_search = $this->input->post('user_search');
 		$offset = $this->input->post('offset');
 		$sortby = $this->input->post('sortby');
@@ -173,7 +175,7 @@ class Users extends Auth_Controller
 
 	function user_add(){
 
-		$customer_code = $this->session->userdata('customer_code');
+		$customer_code = $this->session->userdata(SESSION_PREFIX.'customer_code');
 
 		$text_name = $this->input->post('text_name');
 		$CompanyName = $this->input->post('CompanyName');
@@ -190,7 +192,7 @@ class Users extends Auth_Controller
 		$usergroup_id = USER_GROUP_USERTMP;
 		$password = $this->input->post('txt_password');
 		$password = $this->input->post('txt_password');
-		$customer_code = $this->session->userdata('customer_code');
+		$customer_code = $this->session->userdata(SESSION_PREFIX.'customer_code');
 
 		$data_curl = array(
 			'text_name' => $text_name,
@@ -267,7 +269,7 @@ class Users extends Auth_Controller
 
 	function user_edit(){
 
-		$customer_code = $this->session->userdata('customer_code');
+		$customer_code = $this->session->userdata(SESSION_PREFIX.'customer_code');
 
 		$id_en = $this->input->post('id_en');
 		$text_name = $this->input->post('text_name');
@@ -315,7 +317,7 @@ class Users extends Auth_Controller
 	function user_chk_username_invalid_code(){
 
 		$txt_email = $this->input->post('txt_email');
-		$customer_code = $this->session->userdata('customer_code');
+		$customer_code = $this->session->userdata(SESSION_PREFIX.'customer_code');
 
 		$data_curl = array(
 			'txt_email' => $txt_email,
@@ -335,7 +337,7 @@ class Users extends Auth_Controller
 
 	function del_action(){
 
-		$customer_code = $this->session->userdata('customer_code');
+		$customer_code = $this->session->userdata(SESSION_PREFIX.'customer_code');
 
 		$id_en = $this->uri->segment(4);
 

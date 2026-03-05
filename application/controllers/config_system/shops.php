@@ -32,7 +32,15 @@ class Shops extends Auth_Controller
 		//echo $add_alt;
 
 		//echo "--->>>".$this->_customer_code;
-		$arr_shops = $this->web_shop_model->get_shop_by_code($this->_customer_code);
+		$data_search = array(
+			'shop_search' => '',
+			'customer_code' => $this->_customer_code,
+			'sortby' => '',
+			'sorttype' => '',
+			'offset' => 1,
+			'per_page' => 5
+		);
+		$arr_shops = $this->curl_bl->CallApi('POST','config_system/shops/shop_search',$data_search);
 
 		//print_r($arr_shops);
 		if($arr_shops['Status'] == "Success"){
@@ -46,7 +54,8 @@ class Shops extends Auth_Controller
 		$data = array(
 			'arr_shops' => $arr_shops['Data'],
 			'add_alt' => $add_alt,
-			'edit_alt' => $edit_alt
+			'edit_alt' => $edit_alt,
+			'data_search' => $data_search
 		);
 
 		//print_r($data);
@@ -56,13 +65,92 @@ class Shops extends Auth_Controller
 		);
 		
 		$arr_js = array(
-        	'init_main' => base_url()."resources/js/init/main.js"
+			'morecontent' => base_url()."resources/js/morecontent/config_system/shop_list.js",
+			'table_load_sort' => base_url()."resources/js/table_load_sort.js"
     	);
 		
 		
-		$this->view_util->load_view_main('config_system/shops/shops_list',$data,NULL,NULL,$arr_input,MENU_CONFIG_USERGROUP);
+		$this->view_util->load_view_main('config_system/shops/shops_list',$data,NULL,$arr_js,$arr_input,MENU_CONFIG_USERGROUP);
 
 	} 
+
+	public function shops_list_search()
+	{
+		$add_alt = $this->session->flashdata('add_shop');
+		$edit_alt = $this->session->flashdata('edit_shop');
+		$shop_search = $this->input->post('shop_search');
+		$sortby = $this->input->post('sortby');
+		$sorttype = $this->input->post('sorttype');
+
+		$data_search = array(
+			'shop_search' => $shop_search,
+			'customer_code' => $this->_customer_code,
+			'sortby' => $sortby,
+			'sorttype' => $sorttype,
+			'offset' => 1,
+			'per_page' => 5
+		);
+		$arr_shops = $this->curl_bl->CallApi('POST','config_system/shops/shop_search',$data_search);
+
+		if($arr_shops['Status'] == "Success"){
+			$max = sizeof($arr_shops['Data']);
+
+			for($i=0;$i<$max;$i++){
+				$arr_shops['Data'][$i]['ShopID'] = $this->encryption_util->encrypt_ssl($arr_shops['Data'][$i]['ShopID']);
+			}
+		}
+
+		$data = array(
+			'arr_shops' => $arr_shops['Data'],
+			'add_alt' => $add_alt,
+			'edit_alt' => $edit_alt,
+			'data_search' => $data_search
+		);
+
+		$arr_input = array(
+			'title' => "Config Shop"
+		);
+
+		$arr_js = array(
+			'morecontent' => base_url()."resources/js/morecontent/config_system/shop_list.js",
+			'table_load_sort' => base_url()."resources/js/table_load_sort.js"
+    	);
+		
+		$this->view_util->load_view_main('config_system/shops/shops_list',$data,NULL,$arr_js,$arr_input,MENU_CONFIG_USERGROUP);
+	}
+
+	function loaddata_more_ajax(){
+
+		$shop_search = $this->input->post('shop_search');
+		$offset = $this->input->post('offset');
+		$sortby = $this->input->post('sortby');
+		$sorttype = $this->input->post('sorttype');
+
+		$data = array(
+			'shop_search' => $shop_search,
+			'customer_code' => $this->_customer_code,
+			'sortby' => $sortby,
+			'sorttype' => $sorttype,
+			'offset' => $offset,
+			'per_page' => 5
+		);
+
+		$arr_shops = $this->curl_bl->CallApiNospi('POST','config_system/shops/shop_search',$data);
+
+		if($arr_shops['Status'] == "Success"){
+			$max = sizeof($arr_shops['Data']);
+
+			for($i=0;$i<$max;$i++){
+				$arr_shops['Data'][$i]['ShopID'] = $this->encryption_util->encrypt_ssl($arr_shops['Data'][$i]['ShopID']);
+			}
+		}
+
+		$arr_data = array(
+			'list_data' => $arr_shops['Data']
+		);
+		echo json_encode($arr_data);
+
+	}
 
 	function add_shop_form(){
 

@@ -88,24 +88,24 @@
             <h4 class="card-title mb-0" id="manage_cat_txt" style="padding: 0px 0px 10px 0px;"></h4>
             <h4 class="card-title mb-0" id="manage_main_cat_txt" style="padding: 0px 0px 10px 0px;display: none"></h4>
             <form role="form" name="cat_add_form" id="cat_add_form" action="<?php echo base_url()."webcategory/category_add";?>" method="post">
-                <div class="form-group row">
-                    <label class="col-md-2 col-form-label" id="cat_title">ชื่อหมวดหมู่ : </label>
-                    <div class="col-md-6">
-                      <input type="text" class="form-control" name="cat_name" id='cat_name'  autocomplete="off">
-                    </div>
-                  </div>
-                  <div class="form-group row">
-                    <label class="col-md-2 col-form-label">รายละเอียด : </label>
-                    <div class="col-md-6">
-                      <textarea class="form-control" name="cat_des" id="cat_des"></textarea>
-                    </div>
-                  </div>
-                  <input type="hidden" name="id_shop" id="id_shop" value="<?php echo $id_shop;?>">
-                  <input type="hidden" name="parent_id" id="parent_id">
-                  <input type="hidden" name="is_add" id="is_add">
-                  <input type="hidden" name="from_pop" id="from_pop" value="<?php echo $from_pop;?>">
-                  <button type="submit" class="btn btn-primary">Submit</button>
-              </form>
+              <div class="form-group row">
+                <label class="col-md-2 col-form-label" id="cat_title">ชื่อหมวดหมู่ : </label>
+                <div class="col-md-6">
+                  <input type="text" class="form-control" name="cat_name" id='cat_name'  autocomplete="off">
+                </div>
+              </div>
+              <div class="form-group row">
+                <label class="col-md-2 col-form-label">รายละเอียด : </label>
+                <div class="col-md-6">
+                  <textarea class="form-control" name="cat_des" id="cat_des"></textarea>
+                </div>
+              </div>
+              <input type="hidden" name="id_shop" id="id_shop" value="<?php echo $id_shop;?>">
+              <input type="hidden" name="parent_id" id="parent_id">
+              <input type="hidden" name="is_add" id="is_add">
+              <input type="hidden" name="from_pop" id="from_pop" value="<?php echo $from_pop;?>">
+              <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
           </div>
         </div>
       </div>

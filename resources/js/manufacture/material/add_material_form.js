@@ -92,21 +92,51 @@ class UI_subunit {
 
 
 
+    function updateSubunitSku() {
+      var baseSku = $("#newsku").data("base");
+      if (!baseSku) {
+        baseSku = $("#gennewsku").val();
+      }
+
+      if (!baseSku) {
+        return;
+      }
+
+      var subunitTypeText = $("#web_material_subunit_type_id option:selected").text();
+      var subunitTypeValue = $("#web_material_subunit_type_id").val();
+      var subunitQty = $("#subunit_qty").val();
+
+      if (!subunitTypeValue || subunitTypeText == "กรุณาเลือก" || subunitQty == "") {
+        document.getElementById("newsku").innerHTML = baseSku;
+        $("#gennewsku").val(baseSku);
+        return;
+      }
+
+      var newSku = baseSku + subunitTypeText + "x" + subunitQty;
+      document.getElementById("newsku").innerHTML = newSku;
+      $("#gennewsku").val(newSku);
+    }
+
     $( 'input[name="web_material_subunit_id"]:radio' ).live('change', function(e) {
-     //console.log(e.target.presku);
+      var presku = $(this).attr('presku');
+      if (!presku) {
+        return;
+      }
+      $("#newsku").data("base", presku);
 
-     var presku = $(this).attr('presku');
-     //alert(presku);
+      document.getElementById("newsku").innerHTML = presku;
+      $("#gennewsku").val(presku);
 
-     const oldsku = presku;
-     
-     document.getElementById("newsku").innerHTML = "";
-     document.getElementById("newsku").innerHTML = presku;
-	
-	 $("#gennewsku").val('');
-	 $("#gennewsku").val(presku);
+      updateSubunitSku();
+    });
 
-	});
+    $("#web_material_subunit_type_id").on("change", function() {
+      updateSubunitSku();
+    });
+
+    $("#subunit_qty").on("input change", function() {
+      updateSubunitSku();
+    });
 
 
 
