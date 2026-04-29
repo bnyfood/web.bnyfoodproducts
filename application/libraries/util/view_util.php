@@ -369,6 +369,17 @@ class View_util
 		$this->CI->load->view('template/register/footer');	
 		
 	}
+
+	public function social_login($main_page,$data=NULL,$arr_css = array(),$arr_js = array(),$arr_input=NULL)
+	{
+		$data["arr_css"] = $arr_css;
+		$data["arr_js"] = $arr_js;
+		$data["arr_input"] = $arr_input;
+
+		$this->CI->load->view('template/social_login/header',$data);
+		$this->CI->load->view($main_page,$data);
+		$this->CI->load->view('template/social_login/footer',$data);
+	}
 	
 	
 	public function page_not_found() //test 

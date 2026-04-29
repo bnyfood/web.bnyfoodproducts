@@ -29,8 +29,148 @@ class Users extends CI_Controller
 
 	}
 
-	function test(){
+    function test(){
 		echo "123456";
+	}
+
+	/**
+	 * Facebook Login (ตัวอย่างเรียกใช้ fblogin_bl)
+	 * เปิดครั้งแรก: redirect ไป Facebook
+	 * หลัง callback: แสดง JSON ข้อมูลที่ Facebook ส่งกลับ
+	 * ตั้ง Valid OAuth Redirect URI ใน Facebook App เป็น: .../users/login_with_fb
+	 */
+	public function login_with_fb()
+	{
+		$this->load->library('businesslogic/fblogin_bl');
+		$redirect_uri = base_url('users/login_with_fb');
+
+		$fb_code = $this->input->get('code', true);
+		$fb_error = $this->input->get('error', true);
+		if (!empty($fb_code) || !empty($fb_error)) {
+			$result = $this->fblogin_bl->get_callback_data($redirect_uri);
+			if (!empty($result['status']) && !empty($result['user_login_row'])) {
+				$this->set_social_login_state($result['user_login_row']);
+				$this->maybe_redirect_after_social($result['user_login_row'], $result);
+			} else {
+				$this->output
+					->set_content_type('application/json')
+					->set_output(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+			}
+			return;
+		}
+
+		$result = $this->fblogin_bl->get_login_url($redirect_uri);
+		if (!empty($result['status']) && !empty($result['login_url'])) {
+			redirect($result['login_url'], 'refresh');
+			return;
+		}
+
+		$this->output
+			->set_content_type('application/json')
+			->set_output(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+	}
+
+	/**
+	 * Google Login แบบเดียวกับ login_with_fb
+	 * เปิดครั้งแรก: redirect ไป Google
+	 * หลัง callback: แสดง JSON ข้อมูลที่ Google ส่งกลับ
+	 * ตั้ง Authorized redirect URI ใน Google Console ให้ตรงกับ GOOGLE_GOOGLE_LOGIN_REDIRECT
+	 * (ต่างจาก users/login_with_google ที่ใช้ GOOGLE_LOGIN_REDIRECT)
+	 */
+	public function google_login()
+	{
+		$this->load->library('businesslogic/googlelogin_bl');
+		$redirect_uri = GOOGLE_GOOGLE_LOGIN_REDIRECT;
+		$is_debug = $this->input->get('debug', true);
+
+		$google_code = $this->input->get('code', true);
+		$google_error = $this->input->get('error', true);
+		if (!empty($google_code) || !empty($google_error)) {
+			$result = $this->googlelogin_bl->get_callback_data($redirect_uri);
+			if (!empty($result['status']) && !empty($result['user_login_row'])) {
+				$this->set_social_login_state($result['user_login_row']);
+				$this->maybe_redirect_after_social($result['user_login_row'], $result);
+			} else {
+				$this->output
+					->set_content_type('application/json')
+					->set_output(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+			}
+			return;
+		}
+
+		$result = $this->googlelogin_bl->get_login_url($redirect_uri);
+		if ($is_debug === '1') {
+			$result['debug'] = array(
+				'google_client_id' => GOOGLE_Client_ID,
+				'google_login_redirect' => GOOGLE_LOGIN_REDIRECT,
+				'google_google_login_redirect' => GOOGLE_GOOGLE_LOGIN_REDIRECT
+			);
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+			return;
+		}
+
+		if (!empty($result['status']) && !empty($result['login_url'])) {
+			redirect($result['login_url'], 'refresh');
+			return;
+		}
+
+		$this->output
+			->set_content_type('application/json')
+			->set_output(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+	}
+
+	/**
+	 * เก็บ web_user_login + ฟิลด์ social ลง session/cookie
+	 * @param array $user_row แถวจาก table web_user_login
+	 */
+	private function set_social_login_state($user_row)
+	{
+		$this->load->helper('cookie');
+
+		$keys = array(
+			'web_user_login_id',
+			'facebook_id',
+			'facebook_name',
+			'facebook_email',
+			'facebook_phone',
+			'google_id',
+			'google_name',
+			'google_email',
+			'google_phone',
+			'web_user_phone',
+		);
+
+		foreach ($keys as $k) {
+			$v = '';
+			if (array_key_exists($k, $user_row) && $user_row[$k] !== null) {
+				$v = (string) $user_row[$k];
+			}
+			$this->session->set_userdata(SESSION_PREFIX . $k, $v);
+			$this->input->set_cookie(array(
+				'name'   => COOKIE_PREFIX . $k,
+				'value'  => $this->encryption_util->encrypt_ssl($v),
+				'expire' => 31536000,
+				'path'   => '/',
+				'secure' => false,
+			));
+		}
+	}
+
+	/**
+	 * ถ้ายังไม่มี web_user_phone ใน web_user_login ให้ redirect ไป bny_luckydraw, มิฉะนั้นส่ง JSON
+	 */
+	private function maybe_redirect_after_social($user_row, $result)
+	{
+		$w = isset($user_row['web_user_phone']) ? trim((string) $user_row['web_user_phone']) : '';
+		if ($w === '') {
+			redirect(base_url() . 'bnyreward/bny_luckydraw', 'location', 302);
+			return;
+		}
+		$this->output
+			->set_content_type('application/json')
+			->set_output(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 	}
 
 	public function login()
@@ -1405,6 +1545,8 @@ class Users extends CI_Controller
 	    
 	    echo base_url().'users/login_with_google/'.$usergroup_id_en;
 	}
+
+
 
 	function gen_link_test(){
 

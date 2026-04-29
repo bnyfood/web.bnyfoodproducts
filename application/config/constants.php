@@ -98,7 +98,8 @@ define('BNY_ESTABLISHDATETIME','2019-01-01');
 define('SHOPEE_START_DATE','2021-07-20T00:00:00+0700');
 define('BNY_ESTABLISHDATE','2019-04-19');
 define('LAZADA_CODE','0_123793_l5bnHWN7l1LnfeAAmN24ry8e58813');
-define('SHOPEE_PATNERKEY','5413e433a5b83c2bc82f06b4384bcab0c9595e09bcf6566d5ee43f85abaa5250');
+define('SHOPEE_PATNERKEY','shpk506555716f464b484b5a6d4c4579507662645a784f424650424f534e5773');
+//define('SHOPEE_PATNERKEY','5413e433a5b83c2bc82f06b4384bcab0c9595e09bcf6566d5ee43f85abaa5250');
 define('SHOPEE_PATNERID',2001584);
 define('BNY_SUBSCRIPTION_SHOPID',123456);
 define('SHOPEE_APIURL','https://partner.shopeemobile.com');
@@ -156,7 +157,11 @@ define('SMS_SECRET_KEY','g3d0NyvfkOHVm2EmVwt5YtO2qjfXOd');
 define('GOOGLE_Client_ID','324318261967-nc4bbh638m1d4m5hb0cacp3oq6rl0mbj.apps.googleusercontent.com');
 define('GOOGLE_SECRET_KEY','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');
 define('GOOGLE_LOGIN_REDIRECT','https://www.bnyfoodproducts.com/users/login_with_google');
+// OAuth callback สำหรับ users/google_login (library googlelogin_bl) แยกจาก login_with_google
+define('GOOGLE_GOOGLE_LOGIN_REDIRECT','https://www.bnyfoodproducts.com/users/google_login');
 define('GOOGLE_LOGIN_SUCCESS_REDIRECT','https://www.bnyfoodproducts.com/users/logined_with_google');
+define('FACEBOOK_APP_ID','1282625096720220');
+define('FACEBOOK_APP_SECRET','2af5d31dfeb3f7e91ac59da5284ac78e');
 define('CONTENT_PER_PAGE',10);
 
 
