@@ -42,15 +42,15 @@ class Users extends CI_Controller
 	public function login_with_fb()
 	{
 		$this->load->library('businesslogic/fblogin_bl');
+		$this->load->model('web_user_login_model');
 		$redirect_uri = base_url('users/login_with_fb');
 
 		$fb_code = $this->input->get('code', true);
 		$fb_error = $this->input->get('error', true);
 		if (!empty($fb_code) || !empty($fb_error)) {
 			$result = $this->fblogin_bl->get_callback_data($redirect_uri);
-			if (!empty($result['status']) && !empty($result['user_login_row'])) {
-				$this->set_social_login_state($result['user_login_row']);
-				$this->maybe_redirect_after_social($result['user_login_row'], $result);
+			if (!empty($result['status']) && !empty($result['facebook_response'])) {
+				$this->process_social_callback('facebook', $result['facebook_response'], $result);
 			} else {
 				$this->output
 					->set_content_type('application/json')
@@ -80,6 +80,7 @@ class Users extends CI_Controller
 	public function google_login()
 	{
 		$this->load->library('businesslogic/googlelogin_bl');
+		$this->load->model('web_user_login_model');
 		$redirect_uri = GOOGLE_GOOGLE_LOGIN_REDIRECT;
 		$is_debug = $this->input->get('debug', true);
 
@@ -87,9 +88,8 @@ class Users extends CI_Controller
 		$google_error = $this->input->get('error', true);
 		if (!empty($google_code) || !empty($google_error)) {
 			$result = $this->googlelogin_bl->get_callback_data($redirect_uri);
-			if (!empty($result['status']) && !empty($result['user_login_row'])) {
-				$this->set_social_login_state($result['user_login_row']);
-				$this->maybe_redirect_after_social($result['user_login_row'], $result);
+			if (!empty($result['status']) && !empty($result['google_response'])) {
+				$this->process_social_callback('google', $result['google_response'], $result);
 			} else {
 				$this->output
 					->set_content_type('application/json')
@@ -122,9 +122,74 @@ class Users extends CI_Controller
 	}
 
 	/**
-	 * เก็บ web_user_login + ฟิลด์ social ลง session/cookie
-	 * @param array $user_row แถวจาก table web_user_login
+	 * Social login callback flow:
+	 * 1) เช็ค id provider ว่ามีใน web_user_login แล้วหรือยัง
+	 * 2) ถ้าไม่มีให้ insert ใหม่
+	 * 3) เก็บค่าใน session/cookie
+	 * 4) ถ้าใหม่ หรือชื่อ/เบอร์ว่าง -> ไป register form
 	 */
+	private function process_social_callback($provider, $profile, $result)
+	{
+		$provider_id = isset($profile['id']) ? trim((string)$profile['id']) : '';
+		if ($provider_id === '') {
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode(array(
+					'status' => false,
+					'message' => 'Missing provider id from social profile.',
+					'provider' => $provider,
+					'profile' => $profile,
+				), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+			return;
+		}
+
+		$is_insert = false;
+		if ($provider === 'facebook') {
+			$row = $this->web_user_login_model->select_by_facebook_id($provider_id);
+			if (empty($row)) {
+				$is_insert = true;
+				$insert_id = $this->web_user_login_model->insert(array(
+					'facebook_id' => $provider_id,
+					'facebook_name' => isset($profile['name']) ? $profile['name'] : null,
+					'facebook_email' => isset($profile['email']) ? $profile['email'] : null,
+					'last_login_time' => DATE_TIME_NOW,
+					'cdate' => DATE_TIME_NOW,
+				));
+				$row = $this->web_user_login_model->select_by_id($insert_id);
+			} else {
+				$this->web_user_login_model->update_by_id($row['web_user_login_id'], array(
+					'facebook_name' => isset($profile['name']) ? $profile['name'] : null,
+					'facebook_email' => isset($profile['email']) ? $profile['email'] : null,
+					'last_login_time' => DATE_TIME_NOW,
+				));
+				$row = $this->web_user_login_model->select_by_id($row['web_user_login_id']);
+			}
+		} else {
+			$row = $this->web_user_login_model->select_by_google_id($provider_id);
+			if (empty($row)) {
+				$is_insert = true;
+				$insert_id = $this->web_user_login_model->insert(array(
+					'google_id' => $provider_id,
+					'google_name' => isset($profile['name']) ? $profile['name'] : null,
+					'google_email' => isset($profile['email']) ? $profile['email'] : null,
+					'last_login_time' => DATE_TIME_NOW,
+					'cdate' => DATE_TIME_NOW,
+				));
+				$row = $this->web_user_login_model->select_by_id($insert_id);
+			} else {
+				$this->web_user_login_model->update_by_id($row['web_user_login_id'], array(
+					'google_name' => isset($profile['name']) ? $profile['name'] : null,
+					'google_email' => isset($profile['email']) ? $profile['email'] : null,
+					'last_login_time' => DATE_TIME_NOW,
+				));
+				$row = $this->web_user_login_model->select_by_id($row['web_user_login_id']);
+			}
+		}
+
+		$this->set_social_login_state($row);
+		$this->maybe_redirect_after_social($row, $is_insert);
+	}
+
 	private function set_social_login_state($user_row)
 	{
 		$this->load->helper('cookie');
@@ -139,6 +204,7 @@ class Users extends CI_Controller
 			'google_name',
 			'google_email',
 			'google_phone',
+			'web_user_name',
 			'web_user_phone',
 		);
 
@@ -159,18 +225,17 @@ class Users extends CI_Controller
 	}
 
 	/**
-	 * ถ้ายังไม่มี web_user_phone ใน web_user_login ให้ redirect ไป bny_luckydraw, มิฉะนั้นส่ง JSON
+	 * ถ้า insert ใหม่ หรือข้อมูลชื่อ/เบอร์ยังว่าง ให้ไปหน้า register form
 	 */
-	private function maybe_redirect_after_social($user_row, $result)
+	private function maybe_redirect_after_social($user_row, $is_insert)
 	{
-		$w = isset($user_row['web_user_phone']) ? trim((string) $user_row['web_user_phone']) : '';
-		if ($w === '') {
-			redirect(base_url() . 'bnyreward/bny_luckydraw', 'location', 302);
+		$user_name = isset($user_row['web_user_name']) ? trim((string)$user_row['web_user_name']) : '';
+		$user_phone = isset($user_row['web_user_phone']) ? trim((string)$user_row['web_user_phone']) : '';
+		if ($is_insert || $user_name === '' || $user_phone === '') {
+			redirect(base_url() . 'social_login/bnyregister_form', 'location', 302);
 			return;
 		}
-		$this->output
-			->set_content_type('application/json')
-			->set_output(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+		redirect(base_url('bnyreward/bny_luckyresult'), 'location', 302);
 	}
 
 	public function login()

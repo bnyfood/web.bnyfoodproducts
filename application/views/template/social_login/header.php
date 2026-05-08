@@ -118,6 +118,20 @@
       height: 100%;
       display: block;
     }
+    /* Validate styles for social/bnyreward forms */
+    .help-block,
+    label.error {
+      color: #c00000 !important;
+      font-size: 13px;
+      font-weight: 600;
+      margin: 4px 0 8px;
+      display: block;
+    }
+    input.error,
+    .form-control.error {
+      border-color: #c00000 !important;
+      box-shadow: 0 0 0 1px rgba(192, 0, 0, 0.08);
+    }
     @media (max-width: 576px) {
       .social-login-card {
         padding: 22px 16px;
