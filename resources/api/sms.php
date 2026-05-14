@@ -20,16 +20,11 @@ class SMS
             die("Body rquire array");
         }
 
-        //echo $this->token;
-        //print_r($body);
-        //return $this->cURL($body);
         return $this->cURL($body);
     }
 
     private function cURL($body = [])
     {
-        print_r($body);
-
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_URL =>  "$this->api/sms",

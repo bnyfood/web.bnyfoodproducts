@@ -697,7 +697,6 @@ class Curl_bl{
 
 	function curl_sms($msisdn,$message,$sender,$force){
 
-
 		require_once __DIR__ . "/../../../resources/api/sms.php";
 
 		$apiKey = SMS_API_KEY;
@@ -721,6 +720,45 @@ class Curl_bl{
 		    echo "Error";
 		    var_dump($res);
 		}
+	}
+
+	/** ส่ง OTP ข้อความไทยมาตรฐาน — คืน true เมื่อ HTTP 201 (ใช้จาก register / เปลี่ยนเบอร์ / luckydraw) */
+	public function send_otp_sms($msisdn, $otp_code)
+	{
+		$otp = preg_replace('/[^0-9]/', '', (string) $otp_code);
+		if (strlen($otp) !== 6) {
+			return false;
+		}
+		$msisdn = trim((string) $msisdn);
+		if ($msisdn === '') {
+			return false;
+		}
+		$message = 'OTP ของคุณคือ ' . $otp . ' ห้ามแจ้งรหัสกับบุคคลอื่นทุกกรณี';
+		return $this->curl_sms_quiet($msisdn, $message, 'Demo', 'corporate');
+	}
+
+	/** ส่ง SMS ผ่าน ThaiBulkSMS โดยไม่ echo (เหมาะกับ controller ที่ตอบ JSON) */
+	public function curl_sms_quiet($msisdn, $message, $sender, $force)
+	{
+		if (!defined('SMS_API_KEY') || !defined('SMS_SECRET_KEY')) {
+			log_message('error', 'curl_sms_quiet: SMS_API_KEY / SMS_SECRET_KEY not defined');
+			return false;
+		}
+		require_once __DIR__ . "/../../../resources/api/sms.php";
+		$sms = new SMS(SMS_API_KEY, SMS_SECRET_KEY);
+		$body = array(
+			'msisdn' => $msisdn,
+			'message' => $message,
+			'sender' => $sender,
+			'force' => $force,
+		);
+		$res = $sms->sendSMS($body);
+		if (is_object($res) && isset($res->httpStatusCode) && (int) $res->httpStatusCode === 201) {
+			return true;
+		}
+		$detail = is_object($res) ? json_encode($res) : 'invalid response';
+		log_message('error', 'curl_sms_quiet failed: ' . $detail);
+		return false;
 	}
 	
 	

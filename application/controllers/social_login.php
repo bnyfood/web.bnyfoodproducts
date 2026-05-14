@@ -8,6 +8,7 @@ class Social_login extends CI_Controller
         $this->load->library('util/View_util');
         $this->load->library('util/encryption_util');
         $this->load->library('util/random_util');
+        $this->load->library('businesslogic/curl_bl');
         $this->load->helper('cookie');
         $this->load->model('web_user_login_model');
         $this->load->model('web_user_phone_model');
@@ -129,6 +130,10 @@ class Social_login extends CI_Controller
             'secure' => false
         ));
 
+        if (!$this->curl_bl->send_otp_sms($web_user_phone, (string) $key_otp)) {
+            $this->session->set_flashdata('bnyregister_otp_error', 'ส่ง SMS ไม่สำเร็จ กรุณากดส่ง OTP อีกครั้งหลังเข้าหน้ายืนยัน');
+        }
+
         redirect(base_url('social_login/bnyregister_otp'), 'refresh');
     }
 
@@ -145,7 +150,7 @@ class Social_login extends CI_Controller
             redirect(base_url('social_login/bnyregister_form'), 'refresh');
             return;
         }
-
+//
         $arr_input = array(
             'title' => 'Register OTP'
         );
@@ -260,6 +265,7 @@ class Social_login extends CI_Controller
         $this->web_user_login_model->update_by_id($phone_id, $merge_data);
         $this->ensure_web_user_phone_record($phone_id, $web_user_phone);
         $this->web_user_phone_model->set_verified($phone_id, $web_user_phone);
+
         $this->web_user_login_model->delete_by_id($current_id);
 
         $target_row = $this->web_user_login_model->select_by_id($phone_id);
@@ -294,25 +300,31 @@ class Social_login extends CI_Controller
             $key_otp = 100000 + (abs($key_otp) % 900000);
         }
         $this->web_user_phone_model->update_key_otp_by_login_and_phone($current_id, $pending['web_user_phone'], $key_otp);
-        $this->session->set_flashdata('bnyregister_otp_error', 'ส่ง OTP ใหม่แล้ว (ทดสอบ)');
+        if (!$this->curl_bl->send_otp_sms($pending['web_user_phone'], (string) $key_otp)) {
+            $this->session->set_flashdata('bnyregister_otp_error', 'ส่ง SMS ไม่สำเร็จ กรุณากดส่ง OTP อีกครั้ง');
+        }
         redirect(base_url('social_login/bnyregister_otp'), 'refresh');
     }
 
     private function get_current_login_row()
     {
-        $id = $this->session->userdata(SESSION_PREFIX . 'web_user_login_id');
+        $id = null;
+        $id_cookie = get_cookie(COOKIE_PREFIX . 'web_user_login_id');
+        if (!empty($id_cookie)) {
+            $id = $this->encryption_util->decrypt_ssl($id_cookie);
+        }
         if (empty($id)) {
-            $id_cookie = get_cookie(COOKIE_PREFIX . 'web_user_login_id');
-            if (!empty($id_cookie)) {
-                $id = $this->encryption_util->decrypt_ssl($id_cookie);
-            }
+            $id = $this->session->userdata(SESSION_PREFIX . 'web_user_login_id');
         }
 
         if (empty($id)) {
             return null;
         }
 
-        return $this->web_user_login_model->select_by_id((int)$id);
+        $id = (int) $id;
+        $this->session->set_userdata(SESSION_PREFIX . 'web_user_login_id', (string) $id);
+
+        return $this->web_user_login_model->select_by_id($id);
     }
 
     private function set_social_session_cookie($row)
