@@ -1,0 +1,1 @@
+2020-12-01 23:59:47^_^123793^_^CLI^_^WINNT^_^lazop-sdk-php-20180422^_^https://auth.lazada.com/rest/auth/token/refresh?app_key=123793&sign_method=sha256&timestamp=1606841987000&partner_id=lazop-sdk-php-20180422&sign=D3CB9CADFE6CC7A8F7B6FB44D21313F70FEC43B2F201962EED87878A712624EE^_^IllegalRefreshToken^_^The specified refresh token is invalid or expired

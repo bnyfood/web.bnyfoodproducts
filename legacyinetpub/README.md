@@ -1,19 +1,9 @@
-﻿# Legacy inetpub snapshot (checkpoint 2026-08-21)
+﻿# Legacy inetpub snapshot (checkpoint)
 
-Source on server: `P:\legacyinetpub` (Windows Backup restore, ~mid-July 2026).
+Source: `P:\legacyinetpub` (Windows Backup restore).
 
-GitHub keeps a **slim code snapshot** of `legacyinetpub\bnyfoodproduct` for versioning / tax-logic compare.
+GitHub keeps **only**:
+- `legacyinetpub/bnyfoodproduct` — main ERP app logic (slim; huge third_party/api vendors excluded)
+- `legacyinetpub/api` — legacy API site
 
-Included:
-- `application` controllers, models, libraries, views, config (business logic)
-- light `resources` (no google-api vendor)
-- `index.php`, `composer.json`, `web.config`
-
-Excluded (remain only on `P:\legacyinetpub` — too large for GitHub):
-- `application/third_party/api` (~888 MB)
-- `application/third_party/PHPExcel`
-- `resources/api` (Google client vendor)
-- `system` (CI core; same as current)
-- rest of full inetpub (python311, storage, other sites)
-
-Use for: sales-tax / CN legacy decision framework vs current (cutover <= 2026-06-30).
+Full tree stays on server at `P:\legacyinetpub`.
