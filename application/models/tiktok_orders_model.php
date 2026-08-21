@@ -403,6 +403,10 @@ class Tiktok_orders_model extends CI_Model
 		if (empty($rows)) {
 			return NULL;
 		}
+		$CI =& get_instance();
+		if (!isset($CI->report_cutover) || !$CI->report_cutover->is_set() || $CI->report_cutover->use_legacy()) {
+			return $rows;
+		}
 		$rows = $this->filter_orders_not_passed_pack($rows);
 		if (empty($rows)) {
 			return NULL;

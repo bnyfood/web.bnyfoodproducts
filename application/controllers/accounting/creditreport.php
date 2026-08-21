@@ -15,6 +15,7 @@ class Creditreport extends CI_Controller
 		//@@@:[Load Model, Business Logic (library) for prepare before use in controller function]
 		$this->load->library('util/View_util');
 		$this->load->library('util/order_util');
+		$this->load->library('util/report_cutover');
 
 		$this->load->library("businesslogic/account/lazada_report_cn");
     	$this->load->library("businesslogic/account/shopee_report_cn");
@@ -140,6 +141,8 @@ class Creditreport extends CI_Controller
 		//echo "--->>".$this->uri->segment(4)."<<----";
 	     $StartDate=$this->order_util->getStartEndDate($this->uri->segment(5),"S");
 	     $EndDate=$this->order_util->getStartEndDate($this->uri->segment(5),"E");
+	     $this->report_cutover->set_range($StartDate, $EndDate);
+	     $legacy = $this->report_cutover->use_legacy();
 	     //prepdata
 	    
 	     //Lazada
@@ -162,13 +165,15 @@ class Creditreport extends CI_Controller
 	        'validdata'=>$validdata,
 	        'start_date'=>$StartDate,
 	        'end_date'=>$EndDate,
+	        'report_legacy'=>$legacy,
 	        'lazada_orders'=>$arr_lazada_make,
 	        'lazada_orders_daily'=>$arr_lazada_daily
 	      ), array(
 	        'platform' => $platform,
 	        'StartDate' => $StartDate,
 	        'EndDate' => $EndDate,
-	        'source' => 'cn.laz'
+	        'source' => 'cn.laz',
+	        'cutover' => $this->report_cutover->range_info()
 	      ));
 	    $this->load->view('accounting/creditreport/lazada_creditreportpages',$data);
 	  }elseif($platform == "1"){ // Shopee — same source as ใบลดหนี้รายตัว, grouped by date
@@ -184,6 +189,7 @@ class Creditreport extends CI_Controller
 	      'validdata'=>$validdata,
 	      'start_date'=>$StartDate,
 	      'end_date'=>$EndDate,
+	      'report_legacy'=>$legacy,
 	      'shopee_orders'=>$arr_orders,
 	      'shopee_orders_daily'=>$arr_group
 	    ), array(
@@ -191,7 +197,8 @@ class Creditreport extends CI_Controller
 	      'StartDate' => $StartDate,
 	      'EndDate' => $EndDate,
 	      'rows' => is_array($arr_orders) ? count($arr_orders) : 0,
-	      'source' => 'cn.sho.evt'
+	      'source' => $legacy ? 'cn.sho.legacy' : 'cn.sho.evt',
+	      'cutover' => $this->report_cutover->range_info()
 	    ));
 
 	    $this->load->view('accounting/creditreport/shopee_creditreportpages',$data);
@@ -213,13 +220,15 @@ class Creditreport extends CI_Controller
 	        'validdata'=>$validdata,
 	        'start_date'=>$StartDate,
 	        'end_date'=>$EndDate,
+	        'report_legacy'=>$legacy,
 	        'tiktok_orders'=>$arr_tiktok_make,
 	        'tiktok_orders_daily'=>$arr_tiktok_make_group
 	      ), array(
 	        'platform' => $platform,
 	        'StartDate' => $StartDate,
 	        'EndDate' => $EndDate,
-	        'source' => 'cn.tik'
+	        'source' => 'cn.tik',
+	        'cutover' => $this->report_cutover->range_info()
 	      ));
 	                      
 	    $this->load->view('accounting/creditreport/tiktok_creditreportpages',$data);
@@ -250,6 +259,7 @@ class Creditreport extends CI_Controller
 	function sho_make_cn_daily(){
 		$StartDate = substr((string) $this->uri->segment(4), 0, 10);
 		$EndDate = substr((string) $this->uri->segment(5), 0, 10);
+		$this->report_cutover->set_range($StartDate, $EndDate);
 		$loaded = $this->load_shopee_cn_report_orders($StartDate, $EndDate);
 		$arr_group = $loaded['daily'];
 		$validdata = 0;
@@ -260,11 +270,13 @@ class Creditreport extends CI_Controller
 			'validdata'=>$validdata,
 			'start_date'=>$StartDate,
 			'end_date'=>$EndDate,
+			'report_legacy'=>$this->report_cutover->use_legacy(),
 			'shopee_orders'=>$arr_group
 		), array(
 			'StartDate' => $StartDate,
 			'EndDate' => $EndDate,
-			'source' => 'cn.sho.day'
+			'source' => 'cn.sho.day',
+			'cutover' => $this->report_cutover->range_info()
 		));
 		$this->load->view('accounting/creditreport/shopee_creditreportpages_group',$data);
 	}
@@ -272,6 +284,7 @@ class Creditreport extends CI_Controller
 	function tik_make_cn_daily(){
 		$StartDate = substr((string) $this->uri->segment(4), 0, 10);
 		$EndDate = substr((string) $this->uri->segment(5), 0, 10);
+		$this->report_cutover->set_range($StartDate, $EndDate);
 		$arr_tiktok=$this->tiktok_orders_model->tiktok_select_order_groupby_Date_by_DateStart_DateEnd_CN($StartDate,$EndDate);
 		$arr_tiktok_make = $this->tiktok_report_cn->make_cn($arr_tiktok);
 		$arr_tiktok_make_group = $this->tiktok_report_cn->make_group_cn($arr_tiktok_make);
@@ -279,12 +292,18 @@ class Creditreport extends CI_Controller
 		if(!empty($arr_tiktok_make_group)){
 			$validdata = 1;
 		}
-		$data=array(
+		$data=$this->attach_ai_debug(array(
 			'validdata'=>$validdata,
 			'start_date'=>$StartDate,
 			'end_date'=>$EndDate,
+			'report_legacy'=>$this->report_cutover->use_legacy(),
 			'tiktok_orders'=>$arr_tiktok_make_group
-		);
+		), array(
+			'StartDate' => $StartDate,
+			'EndDate' => $EndDate,
+			'source' => 'cn.tik.day',
+			'cutover' => $this->report_cutover->range_info()
+		));
 		$this->load->view('accounting/creditreport/tiktok_creditreportpages_group',$data);
 	}
 
@@ -373,6 +392,22 @@ class Creditreport extends CI_Controller
 
 	function load_shopee_cn_report_orders($StartDate, $EndDate)
 	{
+		$this->report_cutover->set_range($StartDate, $EndDate);
+		if ($this->report_cutover->use_legacy()) {
+			// Legacy: daily CN from SP groupby (shipped/invoice_date path), ValueBeforeVAT money.
+			$arr_shopee = $this->shopee_orders_model->shopee_select_order_groupby_Date_by_DateStart_DateEnd_CN($StartDate, $EndDate);
+			$arr_orders = array();
+			$arr_group = array();
+			if (!empty($arr_shopee)) {
+				$arr_orders = $this->shopee_report_cn->make_cn($arr_shopee);
+				$arr_group = $this->shopee_report_cn->make_group_cn_legacy($arr_orders);
+			}
+			return array(
+				'orders' => $arr_orders,
+				'daily' => $arr_group
+			);
+		}
+
 		$orders_orderitems = $this->shopee_orders_model->shopee_select_order_with_orderitems_by_cn_event_date($StartDate, $EndDate);
 		$arr_orders = array();
 		$arr_group = array();

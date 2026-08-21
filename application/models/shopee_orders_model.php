@@ -791,6 +791,12 @@ $this->db->update('lazada_orders', $data);
 		if (empty($rows)) {
 			return NULL;
 		}
+		// Skip new PHP death-filter when legacy period, or when cutover not set yet
+		// (invoice-range "more" pages set cutover after the first fetch).
+		$CI =& get_instance();
+		if (!isset($CI->report_cutover) || !$CI->report_cutover->is_set() || $CI->report_cutover->use_legacy()) {
+			return $rows;
+		}
 		$rows = $this->filter_orders_not_passed_pack($rows);
 		if (empty($rows)) {
 			return NULL;

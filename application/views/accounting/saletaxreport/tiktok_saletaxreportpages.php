@@ -365,9 +365,16 @@ defined('BASEPATH') OR exit('No direct script access allowed');
               $seller_disc = floatval($row["seller_discount"]);
             }
             $shipping_fee = isset($row["shipping_fee"]) ? floatval($row["shipping_fee"]) : 0;
-            $ref_price = floatval($row["price"]) - $seller_disc + $shipping_fee;
-            $priceBeforeVAT = $ref_price / 1.07;
-            $VAT = $ref_price - $priceBeforeVAT;
+            $legacy_money = !empty($report_legacy);
+            if ($legacy_money && isset($row["priceVATincluded"])) {
+              $ref_price = floatval($row["priceVATincluded"]);
+              $priceBeforeVAT = isset($row["priceBeforeVAT"]) ? floatval($row["priceBeforeVAT"]) : ($ref_price / 1.07);
+              $VAT = isset($row["VAT"]) ? floatval($row["VAT"]) : ($ref_price - $priceBeforeVAT);
+            } else {
+              $ref_price = floatval($row["price"]) - $seller_disc + $shipping_fee;
+              $priceBeforeVAT = $ref_price / 1.07;
+              $VAT = $ref_price - $priceBeforeVAT;
+            }
             $voucher_platform = isset($row["voucher_platform"]) ? floatval($row["voucher_platform"]) : 0;
             $voucher = isset($row["voucher"]) ? floatval($row["voucher"]) : ($seller_disc + $voucher_platform);
             ?>

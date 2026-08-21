@@ -16,6 +16,7 @@ class Saletaxreport extends CI_Controller
 		$this->load->library('util/View_util');
 		$this->load->library('util/order_util');
 		$this->load->library('util/encryption_util');
+		$this->load->library('util/report_cutover');
 
 		$this->load->library("businesslogic/account/lazada_report_sale");
 		$this->load->library("businesslogic/account/shopee_report_sale");
@@ -206,6 +207,8 @@ class Saletaxreport extends CI_Controller
 		//echo "--->>".$this->uri->segment(4)."<<----";
 	     $StartDate=$this->order_util->getStartEndDate($this->uri->segment(5),"S");
 	     $EndDate=$this->order_util->getStartEndDate($this->uri->segment(5),"E");
+	     $this->report_cutover->set_range($StartDate, $EndDate);
+	     $legacy = $this->report_cutover->use_legacy();
 	     //prepdata
 	     //Lazada
 	     //echo $platform."--".$StartDate."--".$EndDate;
@@ -225,13 +228,15 @@ class Saletaxreport extends CI_Controller
 	        'validdata'=>$validdata,
 	        'start_date'=>$StartDate,
 	        'end_date'=>$EndDate,
+	        'report_legacy'=>$legacy,
 	        'lazada_orders'=>$arr_lazada_make
 
 	      ), array(
 	        'platform' => $platform,
 	        'StartDate' => $StartDate,
 	        'EndDate' => $EndDate,
-	        'source' => 'sale.laz'
+	        'source' => 'sale.laz',
+	        'cutover' => $this->report_cutover->range_info()
 	      ));
 	                       
 	    $this->load->view('accounting/saletaxreport/lazada_saletaxreportpages',$data);
@@ -241,6 +246,8 @@ class Saletaxreport extends CI_Controller
 	    $platform=$this->uri->segment(4);
 	     $StartDate=$this->order_util->getStartEndDate($this->uri->segment(5),"S");
 	     $EndDate=$this->order_util->getStartEndDate($this->uri->segment(5),"E");
+	     $this->report_cutover->set_range($StartDate, $EndDate);
+	     $legacy = $this->report_cutover->use_legacy();
 
 	     //prepdat
 
@@ -257,13 +264,15 @@ class Saletaxreport extends CI_Controller
 	        'validdata'=>$validdata,
 	        'start_date'=>$StartDate,
 	        'end_date'=>$EndDate,
+	        'report_legacy'=>$legacy,
 	        'shopee_orders'=>$arr_shopee_make
 
 	      ), array(
 	        'platform' => $platform,
 	        'StartDate' => $StartDate,
 	        'EndDate' => $EndDate,
-	        'source' => 'sale.sho.proc'
+	        'source' => 'sale.sho.proc',
+	        'cutover' => $this->report_cutover->range_info()
 	      ));
 	                      
 	    $this->load->view('accounting/saletaxreport/shopee_saletaxreportpages',$data);
@@ -272,10 +281,15 @@ class Saletaxreport extends CI_Controller
 	    $platform=$this->uri->segment(4);
 	     $StartDate=$this->order_util->getStartEndDate($this->uri->segment(5),"S");
 	     $EndDate=$this->order_util->getStartEndDate($this->uri->segment(5),"E");
+	     $this->report_cutover->set_range($StartDate, $EndDate);
+	     $legacy = $this->report_cutover->use_legacy();
 
 	     //prepdata
 
 	      $arr_tiktok=$this->tiktok_orders_model->tiktok_select_order_with_DateStart_DateEnd($StartDate,$EndDate);
+	      if ($legacy && !empty($arr_tiktok)) {
+	        $arr_tiktok = $this->report_cutover->remap_tiktok_sale_rows_legacy($arr_tiktok);
+	      }
 	      //print_r($arr_lazada);
 	      //echo "cnt>>".count($arr_lazada)."<br>";
 	      $arr_tiktok_make = $this->tiktok_report_sale->make_taxinvoice_group($arr_tiktok);
@@ -288,12 +302,14 @@ class Saletaxreport extends CI_Controller
 	        'validdata'=>$validdata,
 	        'start_date'=>$StartDate,
 	        'end_date'=>$EndDate,
+	        'report_legacy'=>$legacy,
 	        'tiktok_orders'=>$arr_tiktok_make
 	      ), array(
 	        'platform' => $platform,
 	        'StartDate' => $StartDate,
 	        'EndDate' => $EndDate,
-	        'source' => 'sale.tik'
+	        'source' => 'sale.tik',
+	        'cutover' => $this->report_cutover->range_info()
 	      ));
 	                      
 	    $this->load->view('accounting/saletaxreport/tiktok_saletaxreportpages',$data);
@@ -352,6 +368,12 @@ class Saletaxreport extends CI_Controller
 	    $order_start = substr($ex1[0],3,11);
 	    $order_end = substr($ex1[1],3,11);
 	    $arr_shopee=$this->shopee_orders_model->shopee_select_order_with_OrdernoStart_OrderEnd($order_start,$order_end);
+	    if (!empty($arr_shopee) && is_array($arr_shopee)) {
+	      $this->report_cutover->set_from_rows($arr_shopee, 'transactiondate');
+	      if (!$this->report_cutover->use_legacy()) {
+	        $arr_shopee = $this->shopee_orders_model->apply_passed_pack_report_filter($arr_shopee);
+	      }
+	    }
 	    $validdata = 1;
 	  }
 
@@ -359,6 +381,7 @@ class Saletaxreport extends CI_Controller
 	    'validdata'=>$validdata,
 	    'order_start'=>$order_start,
 	    'order_end'=>$order_end,
+	    'report_legacy'=>$this->report_cutover->use_legacy(),
 	    'shopee_orders'=>$arr_shopee
 	  );
 	  //print_r($data);
@@ -390,6 +413,14 @@ class Saletaxreport extends CI_Controller
 
 		//echo "start>>".$order_start." Stop>>".$order_end;
 	    $arr_tiktok=$this->tiktok_orders_model->tiktok_select_order_with_OrderStart_OrderEnd($order_start,$order_end);
+	    if (!empty($arr_tiktok) && is_array($arr_tiktok)) {
+	      $this->report_cutover->set_from_rows($arr_tiktok, 'transactiondate');
+	      if ($this->report_cutover->use_legacy()) {
+	        $arr_tiktok = $this->report_cutover->remap_tiktok_sale_rows_legacy($arr_tiktok);
+	      } else {
+	        $arr_tiktok = $this->tiktok_orders_model->apply_passed_pack_report_filter($arr_tiktok);
+	      }
+	    }
 	    //print_r($arr_tiktok);
 	    $validdata = 1;
 	  }
@@ -436,6 +467,7 @@ class Saletaxreport extends CI_Controller
 	    'validdata'=>$validdata,
 	    'order_start'=>$order_start,
 	    'order_end'=>$order_end,
+	    'report_legacy'=>$this->report_cutover->use_legacy(),
 	    'tiktok_orders'=>$arr_tiktok
 	  ), $extra);
 	  //print_r($data);

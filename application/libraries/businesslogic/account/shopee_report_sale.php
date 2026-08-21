@@ -66,11 +66,15 @@ class Shopee_report_sale
         }else{ // not full invoice
           if($num == 1){
             array_push($arr_pre1,$data);
-            $priceVATincluded = $data['price'] - $data['seller_discount'] + $data['shipping_fee'];
-            $arr_pre1[0]['priceVATincluded'] = $priceVATincluded;
-            $priceBeforeVAT=round($priceVATincluded/1.07,2);
-            $arr_pre1[0]['priceBeforeVAT'] = $priceBeforeVAT;
-            $arr_pre1[0]['VAT'] = $priceVATincluded-$priceBeforeVAT;
+            // Current: always recompute VAT base. Legacy: keep SP priceVATincluded on first row.
+            $legacy = (isset($this->CI->report_cutover) && $this->CI->report_cutover->use_legacy());
+            if (!$legacy) {
+              $priceVATincluded = $data['price'] - $data['seller_discount'] + $data['shipping_fee'];
+              $arr_pre1[0]['priceVATincluded'] = $priceVATincluded;
+              $priceBeforeVAT=round($priceVATincluded/1.07,2);
+              $arr_pre1[0]['priceBeforeVAT'] = $priceBeforeVAT;
+              $arr_pre1[0]['VAT'] = $priceVATincluded-$priceBeforeVAT;
+            }
             $num = 2;
           }else{
             //print_r($arr_pre1);

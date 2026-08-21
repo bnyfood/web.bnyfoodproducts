@@ -983,6 +983,27 @@ $order_number=0;
 	 */
 	function cn_tax_amounts($row, $include_shipping = false)
 	{
+		$CI =& get_instance();
+		$legacy = (isset($CI->report_cutover) && $CI->report_cutover->use_legacy());
+		if ($legacy && isset($row['ValueBeforeVAT']) && $row['ValueBeforeVAT'] !== '' && $row['ValueBeforeVAT'] !== null) {
+			$incl = floatval($row['ValueBeforeVAT']);
+			$excl = isset($row['priceBeforeVAT']) ? floatval($row['priceBeforeVAT']) : ($incl / 1.07);
+			if (!isset($row['priceBeforeVAT']) && isset($row['VAT'])) {
+				$excl = $incl - floatval($row['VAT']);
+			} elseif (!isset($row['priceBeforeVAT'])) {
+				$excl = $incl / 1.07;
+			}
+			$vat = isset($row['VAT']) ? floatval($row['VAT']) : ($incl - $excl);
+			return array(
+				'price' => isset($row['price']) ? floatval($row['price']) : $incl,
+				'seller_discount' => isset($row['seller_discount']) ? floatval($row['seller_discount']) : (isset($row['voucher_seller']) ? floatval($row['voucher_seller']) : 0),
+				'shipping_fee' => $include_shipping && isset($row['shipping_fee']) ? floatval($row['shipping_fee']) : 0,
+				'vatincl' => $incl,
+				'vatexcl' => $excl,
+				'vat' => $vat,
+			);
+		}
+
 		$price = isset($row['price']) ? floatval($row['price']) : 0;
 		$seller = 0;
 		if (isset($row['seller_discount']) && $row['seller_discount'] !== '' && $row['seller_discount'] !== null) {
