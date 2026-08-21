@@ -1,0 +1,216 @@
+inspected at 2026-08-21 10:02:34
+
+===== full lazada cn view (1 rows) =====
+def
+CREATE VIEW dbo.lazada_orders_cn_date_from_shipped_status_from_latest
+AS
+SELECT        a.OrderID, a.order_number, a.taxinvoiceID, a.created_at, a.shipping_fee_original, a.shipping_fee_discount_platform, a.shipping_fee_discount_seller, a.shipping_fee, a.voucher_platform, a.voucher_seller, a.voucher, a.price, 
+                         a.tax_code, a.status, b.status AS latest_status, a.delivery_info, a.want_taxinvoice, a.suborderinsereted, a.keygen, b.updated_at AS lasted_update, a.updated_at AS invoice_date, a.order_make_cn, a.cn_status, 
+                         a.total_refund_val
+FROM            dbo.lazada_orders AS a INNER JOIN
+                         dbo.lazada_orders AS b ON a.order_number = b.order_number
+WHERE        (a.status = 'packed') AND (b.status IN ('lost_by_3pl', 'damaged_by_3pl', 'shipped_back_success', 'shipped_back', 'returned', 'failed_delivery', 'canceled'))
+
+
+===== full shopee cn date view (1 rows) =====
+def
+CREATE VIEW dbo.shopee_orders_cn_date_from_shipped_status_from_latest
+AS
+SELECT        a.OrderID, a.order_sn, a.taxinvoiceID, a.create_time, a.order_status, b.order_status AS latest_status, a.update_time AS invoice_date, b.update_time AS lasted_update, a.total_amount, a.is_return
+FROM            dbo.shopee_orders AS a INNER JOIN
+                         dbo.shopee_orders AS b ON a.order_sn = b.order_sn
+WHERE        (a.order_status = 'PROCESSED') AND (b.order_status = 'CANCELLED') OR
+                         (a.order_status = 'PROCESSED') AND (b.order_status = 'COMPLETED') AND (a.is_return = 1)
+
+
+===== full shopee_orders_cn_view (1 rows) =====
+def
+CREATE VIEW dbo.shopee_orders_cn_view
+AS
+SELECT        OrderID, order_sn, taxinvoiceID, create_time, order_status, update_time, total_amount
+FROM            dbo.shopee_orders
+WHERE        (order_status <> 'COMPLETED')
+
+
+===== full tiktok cn view (1 rows) =====
+def
+CREATE VIEW dbo.tiktok_orders_cn_date_latest
+AS
+SELECT        a.order_id AS OrderID, a.create_time, a.status AS order_status, b.status AS latest_status, a.create_time AS invoice_date, b.update_time AS lasted_update, d.total_amount
+FROM            dbo.tiktok_orders AS a INNER JOIN
+                         dbo.tiktok_orders AS b ON a.order_id = b.order_id INNER JOIN
+                         dbo.tiktok_order_payment AS d ON a.order_id = d.order_id
+WHERE        (b.status IN ('CANCELLED', 'Canceled')) AND (b.tracking_number IS NOT NULL OR
+                         b.tracking_number <> '') AND (a.status = 'Packet')
+
+
+===== return vs is_return mismatch (4 rows) =====
+status | returns_n | has_is_return | has_completed | has_processed | has_cancelled
+ACCEPTED 
+---row---
+ 36 
+---row---
+ 5 
+---row---
+ 36 
+---row---
+ 36 
+---row---
+ 0
+CANCELLED 
+---row---
+ 23 
+---row---
+ 13 
+---row---
+ 22 
+---row---
+ 22 
+---row---
+ 0
+REFUND_PAID 
+---row---
+ 9 
+---row---
+ 8 
+---row---
+ 8 
+---row---
+ 8 
+---row---
+ 0
+REQUESTED 
+---row---
+ 2 
+---row---
+ 0 
+---row---
+ 2 
+---row---
+ 2 
+---row---
+ 0
+
+===== 2606263CBE9JMP return rows (1 rows) =====
+shopee_return_order_id | return_sn | order_sn | reason | text_reason | refund_amount | status | start_time | end_time | is_active
+65 
+---row---
+ 2607010GPRNQ6B7 
+---row---
+ 2606263CBE9JMP 
+---row---
+ WRONG_ITEM 
+---row---
+ ?????? 
+---row---
+ 235 
+---row---
+ ACCEPTED 
+---row---
+ 2026-07-01 10:03:26 
+---row---
+ 2026-07-07 00:01:14 
+---row---
+ 1
+
+===== tiktok_orders status counts (11 rows) =====
+status | cnt
+Packet 
+---row---
+ 19728
+Completed 
+---row---
+ 19198
+AWAITING_SHIPMENT 
+---row---
+ 5127
+IN_TRANSIT 
+---row---
+ 2982
+AWAITING_COLLECTION 
+---row---
+ 2381
+DELIVERED 
+---row---
+ 1809
+CANCELLED 
+---row---
+ 1684
+Shipped 
+---row---
+ 654
+Canceled 
+---row---
+ 484
+UNPAID 
+---row---
+ 78
+ON_HOLD 
+---row---
+ 1
+
+===== lazada_orders status counts (16 rows) =====
+status | cnt
+packed 
+---row---
+ 92127
+delivered 
+---row---
+ 79900
+confirmed 
+---row---
+ 23862
+shipped 
+---row---
+ 15825
+pending 
+---row---
+ 15738
+canceled 
+---row---
+ 15649
+ready_to_ship 
+---row---
+ 13611
+shipped_back_success 
+---row---
+ 1985
+unpaid 
+---row---
+ 1327
+failed_delivery 
+---row---
+ 268
+shipped_back 
+---row---
+ 106
+lost_by_3pl 
+---row---
+ 33
+ 
+---row---
+ 16
+damaged_by_3pl 
+---row---
+ 15
+returned 
+---row---
+ 14
+ 
+---row---
+ 1
+
+===== shopee_return_order status counts (4 rows) =====
+status | cnt
+ACCEPTED 
+---row---
+ 36
+CANCELLED 
+---row---
+ 23
+REFUND_PAID 
+---row---
+ 9
+REQUESTED 
+---row---
+ 2

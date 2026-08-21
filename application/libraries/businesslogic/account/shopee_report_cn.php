@@ -60,140 +60,88 @@ class Shopee_report_cn
     }
 
     function make_group_cn($arr_datas){
-
-        if(!empty($arr_datas)){
-
         $data_cn = array();
-        $date_num = 1;
-        $date_point = "";
-        $start_inv = "";
-        $stop_inv = "";
+        if (empty($arr_datas)) {
+          return $data_cn;
+        }
+        $this->CI->load->library('util/order_util');
 
-        $ValueBeforeVAT = 0;
-        $VAT = 0;
-        $ValueBeforeVATPlatform = 0;
-        $VATPlatform = 0;
+        $date_point = '';
+        $start_inv = '';
+        $stop_inv = '';
+        $price = 0;
+        $seller_discount = 0;
+        $shipping_fee = 0;
+        $vatexcl = 0;
+        $vat = 0;
+        $vatincl = 0;
+        $cn_status = '';
+        $status2 = '';
 
-        $cnt_data = count($arr_datas);
-
-        foreach($arr_datas as $data){
-
-          //echo $date_num."---".$cnt_data."---".$data['updated_at']."<br>";
-
-          if($date_num == 1){
-
-            $date_point = $data['updated_at'];
-            $start_inv = $data['cncode'];
-            $stop_inv = $data['cncode'];
-
-            $ValueBeforeVAT = $data['ValueBeforeVAT'];
-            $VAT = $data['VAT'];
-            $ValueBeforeVATPlatform = $data['ValueBeforeVATPlatform'];
-            $VATPlatform = $data['VATPlatform'];
-
-            $cn_status = $data['cn_status'];
-            $status2 = $data['status2'];
-
-            $date_num = $date_num+1;
-          }elseif($date_num > 1){
-              // old date
-              if($date_point == $data['updated_at']){
-
-                $ValueBeforeVAT = $ValueBeforeVAT+$data['ValueBeforeVAT'];
-                $VAT = $VAT+$data['VAT'];
-                $ValueBeforeVATPlatform = $ValueBeforeVATPlatform+$data['ValueBeforeVATPlatform'];
-                $VATPlatform = $VATPlatform+$data['VATPlatform'];
-
-                $stop_inv = $data['cncode'];
-                
-
-                // last data
-                if($date_num == $cnt_data){
-
-                  $data_group = array(
-                    'updated_at' => $date_point,
-                    'cncode' => $start_inv."-".$stop_inv,
-                    'cn_status' => $cn_status,
-                    'status2' => $status2,
-                    'ValueBeforeVAT' => $ValueBeforeVAT,
-                    'VAT' => $VAT,
-                    'ValueBeforeVATPlatform' => $ValueBeforeVATPlatform,
-                    'VATPlatform' => $VATPlatform
-                  );
-
-                    array_push($data_cn,$data_group);
-
-                }
-
-                $date_num = $date_num+1;
-
-              }else{
-                // new date
-                $data_group = array(
-                  'updated_at' => $date_point,
-                  'cncode' => $start_inv."-".$stop_inv,
-                  'cn_status' => $cn_status,
-                  'status2' => $status2,
-                  'ValueBeforeVAT' => $ValueBeforeVAT,
-                  'VAT' => $VAT,
-                  'ValueBeforeVATPlatform' => $ValueBeforeVATPlatform,
-                  'VATPlatform' => $VATPlatform
-                );
-
-                array_push($data_cn,$data_group);
-
-                $date_point = $data['updated_at'];
-                $start_inv = $data['cncode'];
-                $stop_inv = $data['cncode'];
-
-                $cn_status = $data['cn_status'];
-                $status2 = $data['status2'];
-
-                $ValueBeforeVAT = 0;
-                $VAT = 0;
-                $ValueBeforeVATPlatform = 0;
-                $VATPlatform = 0;  
-
-                $ValueBeforeVAT = $ValueBeforeVAT+$data['ValueBeforeVAT'];
-                $VAT = $VAT+$data['VAT'];
-                $ValueBeforeVATPlatform = $ValueBeforeVATPlatform+$data['ValueBeforeVATPlatform'];
-                $VATPlatform = $VATPlatform+$data['VATPlatform'];
-
-                
-
-
-                if($date_num == $cnt_data){
-
-                    
-
-                  $data_group = array(
-                    'updated_at' => $date_point,
-                    'cncode' => $start_inv."-".$stop_inv,
-                    'cn_status' => $cn_status,
-                    'status2' => $status2,
-                    'ValueBeforeVAT' => $ValueBeforeVAT,
-                    'VAT' => $VAT,
-                    'ValueBeforeVATPlatform' => $ValueBeforeVATPlatform,
-                    'VATPlatform' => $VATPlatform
-                  );
-
-                    array_push($data_cn,$data_group);
-
-                }
-
-                $date_num = $date_num+1;
-
-              }
-              
+        foreach ($arr_datas as $data) {
+          $row_date = isset($data['updated_at']) ? $data['updated_at'] : '';
+          $row_cn = isset($data['cncode']) ? $data['cncode'] : '';
+          $tax = $this->CI->order_util->cn_tax_amounts($data, true);
+          if ($date_point === '') {
+            $date_point = $row_date;
+            $start_inv = $row_cn;
+            $stop_inv = $row_cn;
+            $price = $tax['price'];
+            $seller_discount = $tax['seller_discount'];
+            $shipping_fee = $tax['shipping_fee'];
+            $vatexcl = $tax['vatexcl'];
+            $vat = $tax['vat'];
+            $vatincl = $tax['vatincl'];
+            $cn_status = isset($data['cn_status']) ? $data['cn_status'] : '';
+            $status2 = isset($data['status2']) ? $data['status2'] : '';
+            continue;
           }
-
-          //echo $date_num."---".$cnt_data."---".$data['updated_at']."\n";
-
+          if ($date_point == $row_date) {
+            $price = $price + $tax['price'];
+            $seller_discount = $seller_discount + $tax['seller_discount'];
+            $shipping_fee = $shipping_fee + $tax['shipping_fee'];
+            $vatexcl = $vatexcl + $tax['vatexcl'];
+            $vat = $vat + $tax['vat'];
+            $vatincl = $vatincl + $tax['vatincl'];
+            $stop_inv = $row_cn;
+            continue;
+          }
+          $data_cn[] = $this->group_row($date_point, $start_inv, $stop_inv, $cn_status, $status2, $price, $seller_discount, $shipping_fee, $vatexcl, $vat, $vatincl);
+          $date_point = $row_date;
+          $start_inv = $row_cn;
+          $stop_inv = $row_cn;
+          $cn_status = isset($data['cn_status']) ? $data['cn_status'] : '';
+          $status2 = isset($data['status2']) ? $data['status2'] : '';
+          $price = $tax['price'];
+          $seller_discount = $tax['seller_discount'];
+          $shipping_fee = $tax['shipping_fee'];
+          $vatexcl = $tax['vatexcl'];
+          $vat = $tax['vat'];
+          $vatincl = $tax['vatincl'];
         }
 
-      }
+        if ($date_point !== '') {
+          $data_cn[] = $this->group_row($date_point, $start_inv, $stop_inv, $cn_status, $status2, $price, $seller_discount, $shipping_fee, $vatexcl, $vat, $vatincl);
+        }
 
-      return($data_cn);
+        return $data_cn;
+    }
+
+    function group_row($date, $start_inv, $stop_inv, $cn_status, $status2, $price, $seller_discount, $shipping_fee, $vatexcl, $vat, $vatincl)
+    {
+      return array(
+        'updated_at' => $date,
+        'cncode' => $start_inv."-".$stop_inv,
+        'cn_status' => $cn_status,
+        'status2' => $status2,
+        'price' => $price,
+        'seller_discount' => $seller_discount,
+        'voucher_seller' => $seller_discount,
+        'shipping_fee' => $shipping_fee,
+        'vatexcl' => $vatexcl,
+        'vat' => $vat,
+        'vatincl' => $vatincl
+      );
     }
 
     function add_font_digi($hc_code,$digi){

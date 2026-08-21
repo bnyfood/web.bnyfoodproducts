@@ -68,6 +68,8 @@ $order_number=0;
 				$orders[$main_runer]["created_at"]=$suborder["created_at"];
 				$orders[$main_runer]["taxinvoiceID"]=$suborder["taxinvoiceID"];
 				$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
+				$orders[$main_runer]["voucher_platform"]=$suborder["voucher_platform"];
+				$orders[$main_runer]["voucher_seller"]=$suborder["voucher_seller"];
 				//$discount=$suborder["voucher_platform"]+$suborder["voucher_seller"];
 				$discount=$suborder["voucher"];
 				$orders[$main_runer]["discount"]=$discount;
@@ -79,6 +81,7 @@ $order_number=0;
 				unset($suborder_detail);
 				$suborder_detail=array();
 				$suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
+									'sku'=>isset($suborder["sku"]) ? $suborder["sku"] : '',
 									'price'=>$suborder["item_price"]
 								    );
 				$runer++;
@@ -92,6 +95,7 @@ $order_number=0;
 				{
 
                   $suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
+									'sku'=>isset($suborder["sku"]) ? $suborder["sku"] : '',
 									'price'=>$suborder["item_price"]
 								    );
 
@@ -114,6 +118,8 @@ $order_number=0;
 					$orders[$main_runer]["created_at"]=$suborder["created_at"];
 					$orders[$main_runer]["taxinvoiceID"]=$suborder["taxinvoiceID"];
 					$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
+					$orders[$main_runer]["voucher_platform"]=$suborder["voucher_platform"];
+					$orders[$main_runer]["voucher_seller"]=$suborder["voucher_seller"];
 					//$discount=$suborder["voucher_platform"]+$suborder["voucher_seller"];
 					$discount=$suborder["voucher"];
 					$orders[$main_runer]["discount"]=$discount;
@@ -124,6 +130,7 @@ $order_number=0;
 				    unset($suborder_detail);	
 					$suborder_detail=array();
 					$suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
+										'sku'=>isset($suborder["sku"]) ? $suborder["sku"] : '',
 										'price'=>$suborder["item_price"]
 									    );
 					$runer++;
@@ -153,18 +160,26 @@ $order_number=0;
 		$order_number=0;
 		foreach($orders_orderitems as $suborder)
 		{
+			$seller_discount = isset($suborder["seller_discount"]) ? $suborder["seller_discount"] : (isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : 0);
+			$item_price = (float)$suborder["item_price"];
+			$qty = (float)$suborder["qty"];
+			$amount = $item_price * $qty;
+			$sku = isset($suborder["sku"]) ? $suborder["sku"] : '';
+
 			if($runer==0) // first record of each order-> collect order data
 			{
 				$orders[$main_runer]["order_number"]=$suborder["order_number"];
 				$orders[$main_runer]["created_at"]=$suborder["created_at"];
 				$orders[$main_runer]["taxinvoiceID"]=$suborder["taxinvoiceID"];
 				$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
+				$orders[$main_runer]["voucher_platform"]=$suborder["voucher_platform"];
+				$orders[$main_runer]["voucher_seller"]=$suborder["voucher_seller"];
+				$orders[$main_runer]["seller_discount"]=$seller_discount;
 
 				$discount=$suborder["voucher_platform"]+$suborder["voucher_seller"];
 				
 				$orders[$main_runer]["discount"]=$discount;
 				$orders[$main_runer]["price"]=$suborder["price"];
-				$amount = $suborder["item_price"]*$suborder["qty"];
 
 				$order_number=$suborder["order_number"];
 
@@ -172,10 +187,10 @@ $order_number=0;
 				unset($suborder_detail);
 				$suborder_detail=array();
 				$suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
-									'item_price'=>$suborder["item_price"],
-										'qty'=>$suborder["qty"],
-										'item_price'=>$suborder["item_price"],
-										'amount'=>$suborder["item_price"],
+									'sku'=>$sku,
+									'item_price'=>$item_price,
+										'qty'=>$qty,
+										'amount'=>$amount,
 								    );
 				$runer++;
 
@@ -185,12 +200,11 @@ $order_number=0;
 			{
 				if($suborder["order_number"]==$order_number) //still in the same order
 				{
-					$amount = $suborder["item_price"]*$suborder["qty"];
                   $suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
-										'item_price'=>$suborder["item_price"],
-										'qty'=>$suborder["qty"],
-										'item_price'=>$suborder["item_price"],
-										'amount'=>$suborder["item_price"],
+										'sku'=>$sku,
+										'item_price'=>$item_price,
+										'qty'=>$qty,
+										'amount'=>$amount,
 								    );
 
 
@@ -209,23 +223,23 @@ $order_number=0;
 					$orders[$main_runer]["created_at"]=$suborder["created_at"];
 					$orders[$main_runer]["taxinvoiceID"]=$suborder["taxinvoiceID"];
 					$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
+					$orders[$main_runer]["voucher_platform"]=$suborder["voucher_platform"];
+					$orders[$main_runer]["voucher_seller"]=$suborder["voucher_seller"];
+					$orders[$main_runer]["seller_discount"]=$seller_discount;
+
 					$discount=$suborder["voucher_platform"]+$suborder["voucher_seller"];
 					$orders[$main_runer]["discount"]=$discount;
 					$orders[$main_runer]["price"]=$suborder["price"];
 					$order_number=$suborder["order_number"];
-	
-
-					$amount = $suborder["item_price"]*$suborder["qty"];
-
 
 	            
 				    unset($suborder_detail);	
 					$suborder_detail=array();
 					$suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
-										'item_price'=>$suborder["item_price"],
-										'qty'=>$suborder["qty"],
-										'item_price'=>$suborder["item_price"],
-										'amount'=>$suborder["item_price"],
+										'sku'=>$sku,
+										'item_price'=>$item_price,
+										'qty'=>$qty,
+										'amount'=>$amount,
 									    );
 					$runer++;
 
@@ -251,18 +265,28 @@ $order_number=0;
 		$order_number=0;
 		foreach($orders_orderitems as $suborder)
 		{
+			$seller_discount = isset($suborder["seller_discount"]) ? $suborder["seller_discount"] : (isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : 0);
+			$item_price = (float)$suborder["item_price"];
+			$qty = (float)$suborder["qty"];
+			$amount = $item_price * $qty;
+			$sku = isset($suborder["sku"]) ? $suborder["sku"] : '';
+			$is_tracking = isset($suborder["is_tracking"]) ? $suborder["is_tracking"] : 1;
+
 			if($runer==0) // first record of each order-> collect order data
 			{
 				$orders[$main_runer]["order_number"]=$suborder["order_number"];
 				$orders[$main_runer]["created_at"]=$suborder["created_at"];
+				$orders[$main_runer]["is_tracking"]=$is_tracking;
 				$orders[$main_runer]["taxinvoiceID"]=$suborder["taxinvoiceID"];
 				$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
+				$orders[$main_runer]["voucher_platform"]=$suborder["voucher_platform"];
+				$orders[$main_runer]["voucher_seller"]=$suborder["voucher_seller"];
+				$orders[$main_runer]["seller_discount"]=$seller_discount;
 
 				$discount=$suborder["voucher_platform"]+$suborder["voucher_seller"];
 				
 				$orders[$main_runer]["discount"]=$discount;
 				$orders[$main_runer]["price"]=$suborder["price"];
-				$amount = $suborder["item_price"]*$suborder["qty"];
 
 				$order_number=$suborder["order_number"];
 
@@ -270,9 +294,9 @@ $order_number=0;
 				unset($suborder_detail);
 				$suborder_detail=array();
 				$suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
-									'item_price'=>$suborder["item_price"],
-										'qty'=>$suborder["qty"],
-										'item_price'=>$suborder["item_price"],
+									'sku'=>$sku,
+									'item_price'=>$item_price,
+										'qty'=>$qty,
 										'amount'=>$amount,
 								    );
 				$runer++;
@@ -283,11 +307,10 @@ $order_number=0;
 			{
 				if($suborder["order_number"]==$order_number) //still in the same order
 				{
-					$amount = $suborder["item_price"]*$suborder["qty"];
                   $suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
-										'item_price'=>$suborder["item_price"],
-										'qty'=>$suborder["qty"],
-										'item_price'=>$suborder["item_price"],
+										'sku'=>$sku,
+										'item_price'=>$item_price,
+										'qty'=>$qty,
 										'amount'=>$amount,
 								    );
 
@@ -307,24 +330,136 @@ $order_number=0;
 					$runer=0;
 					$orders[$main_runer]["order_number"]=$suborder["order_number"];
 					$orders[$main_runer]["created_at"]=$suborder["created_at"];
+					$orders[$main_runer]["is_tracking"]=$is_tracking;
 					$orders[$main_runer]["taxinvoiceID"]=$suborder["taxinvoiceID"];
 					$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
+					$orders[$main_runer]["voucher_platform"]=$suborder["voucher_platform"];
+					$orders[$main_runer]["voucher_seller"]=$suborder["voucher_seller"];
+					$orders[$main_runer]["seller_discount"]=$seller_discount;
+
 					$discount=$suborder["voucher_platform"]+$suborder["voucher_seller"];
 					$orders[$main_runer]["discount"]=$discount;
 					$orders[$main_runer]["price"]=$suborder["price"];
 					$order_number=$suborder["order_number"];
 	
 
-					$amount = $suborder["item_price"]*$suborder["qty"];
+	            
+				    unset($suborder_detail);	
+					$suborder_detail=array();
+					$suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
+										'sku'=>$sku,
+										'item_price'=>$item_price,
+										'qty'=>$qty,
+										'amount'=>$amount,
+									    );
+					$runer++;
 
+				} // entering new record
+
+
+			}
+
+			} //foreach
+
+           $orders[$main_runer]["suborder"]=$suborder_detail;
+
+           return $orders;
+
+	} // end function
+
+	function  BiggrillgetOrdersFromOdersOderItems($orders_orderitems)
+	{
+
+		$orders=array();
+		$main_runer=0;
+		$runer=0;
+		$order_number=0;
+		foreach($orders_orderitems as $suborder)
+		{
+			$seller_discount = isset($suborder["seller_discount"]) ? $suborder["seller_discount"] : (isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : 0);
+			$item_price = (float)$suborder["item_price"];
+			$qty = (float)$suborder["qty"];
+			$amount = $item_price * $qty;
+			$sku = isset($suborder["sku"]) ? $suborder["sku"] : '';
+			$is_tracking = isset($suborder["is_tracking"]) ? $suborder["is_tracking"] : 1;
+			$voucher_platform = isset($suborder["voucher_platform"]) ? $suborder["voucher_platform"] : 0;
+
+			if($runer==0) // first record of each order-> collect order data
+			{
+				$orders[$main_runer]["order_number"]=$suborder["order_number"];
+				$orders[$main_runer]["created_at"]=$suborder["created_at"];
+				$orders[$main_runer]["is_tracking"]=$is_tracking;
+				$orders[$main_runer]["taxinvoiceID"]=$suborder["taxinvoiceID"];
+				$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
+				$orders[$main_runer]["voucher_platform"]=$voucher_platform;
+				$orders[$main_runer]["seller_discount"]=$seller_discount;
+				
+
+				$discount=$voucher_platform+$seller_discount;
+				
+				$orders[$main_runer]["discount"]=$discount;
+				$orders[$main_runer]["price"]=$suborder["price"];
+
+				$order_number=$suborder["order_number"];
+
+
+				unset($suborder_detail);
+				$suborder_detail=array();
+				$suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
+									'sku'=>$sku,
+									'item_price'=>$item_price,
+										'qty'=>$qty,
+										'amount'=>$amount,
+								    );
+				$runer++;
+
+
+			}
+			else
+			{
+				if($suborder["order_number"]==$order_number) //still in the same order
+				{
+                  $suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
+										'sku'=>$sku,
+										'item_price'=>$item_price,
+										'qty'=>$qty,
+										'amount'=>$amount,
+								    );
+
+
+
+				  $runer++;					
+
+
+
+				}
+				else //entering new order record
+
+				{
+					$orders[$main_runer]["suborder"]=$suborder_detail;
+
+	                $main_runer++;	
+					$runer=0;
+					$orders[$main_runer]["order_number"]=$suborder["order_number"];
+					$orders[$main_runer]["created_at"]=$suborder["created_at"];
+					$orders[$main_runer]["is_tracking"]=$is_tracking;
+					$orders[$main_runer]["taxinvoiceID"]=$suborder["taxinvoiceID"];
+					$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
+					$orders[$main_runer]["voucher_platform"]=$voucher_platform;
+					$orders[$main_runer]["seller_discount"]=$seller_discount;
+
+					$discount=$voucher_platform+$seller_discount;
+					$orders[$main_runer]["discount"]=$discount;
+					$orders[$main_runer]["price"]=$suborder["price"];
+					$order_number=$suborder["order_number"];
 
 	            
 				    unset($suborder_detail);	
 					$suborder_detail=array();
 					$suborder_detail[$runer]=array('ProductName'=>$suborder["ProductName"],
-										'item_price'=>$suborder["item_price"],
-										'qty'=>$suborder["qty"],
-										'item_price'=>$suborder["item_price"],
+										'sku'=>$sku,
+										'item_price'=>$item_price,
+										'qty'=>$qty,
 										'amount'=>$amount,
 									    );
 					$runer++;
@@ -375,8 +510,11 @@ $order_number=0;
 				}
 
 				$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
-				$discount=$suborder["voucher_platform"]+$suborder["voucher_seller"];
-				$orders[$main_runer]["discount"]=$discount;
+				$seller_discount = isset($suborder["seller_discount"]) ? $suborder["seller_discount"] : (isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : 0);
+				$orders[$main_runer]["seller_discount"]=$seller_discount;
+				$orders[$main_runer]["voucher_seller"]=isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : $seller_discount;
+				$orders[$main_runer]["voucher_platform"]=isset($suborder["voucher_platform"]) ? $suborder["voucher_platform"] : 0;
+				$orders[$main_runer]["discount"]=$seller_discount;
 				$orders[$main_runer]["price"]=$suborder["price"];
 				$orders[$main_runer]["order_status"]=$suborder["order_status"];
 
@@ -438,8 +576,11 @@ $order_number=0;
 						$orders[$main_runer]["taxinvoiceID"]=$suborder["taxinvoiceID"];
 					}
 					$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
-					$discount=$suborder["voucher_platform"]+$suborder["voucher_seller"];
-					$orders[$main_runer]["discount"]=$discount;
+					$seller_discount = isset($suborder["seller_discount"]) ? $suborder["seller_discount"] : (isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : 0);
+					$orders[$main_runer]["seller_discount"]=$seller_discount;
+					$orders[$main_runer]["voucher_seller"]=isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : $seller_discount;
+					$orders[$main_runer]["voucher_platform"]=isset($suborder["voucher_platform"]) ? $suborder["voucher_platform"] : 0;
+					$orders[$main_runer]["discount"]=$seller_discount;
 					$orders[$main_runer]["price"]=$suborder["price"];
 					$orders[$main_runer]["order_status"]=$suborder["order_status"];
 					$order_number=$suborder["order_number"];
@@ -545,6 +686,10 @@ $order_number=0;
 				$orders[$main_runer]["order_number"]=$suborder["order_number"];
 				$orders[$main_runer]["created_at"]=$suborder["created_at"];
 				$orders[$main_runer]["updated_at"]=$suborder["updated_at"];
+				if (!empty($suborder["cn_event_at"])) {
+					$orders[$main_runer]["cn_event_at"]=$suborder["cn_event_at"];
+					$orders[$main_runer]["updated_at"]=$suborder["cn_event_at"];
+				}
 
 				if($suborder["FullTaxinvoiceID"] != ""){
 					$orders[$main_runer]["taxinvoiceID"]=$suborder["FullTaxinvoiceID"];
@@ -553,8 +698,11 @@ $order_number=0;
 				}
 
 				$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
-				$discount=$suborder["voucher_platform"]+$suborder["voucher_seller"];
-				$orders[$main_runer]["discount"]=$discount;
+				$seller_discount = isset($suborder["seller_discount"]) ? $suborder["seller_discount"] : (isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : 0);
+				$orders[$main_runer]["seller_discount"]=$seller_discount;
+				$orders[$main_runer]["voucher_seller"]=isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : $seller_discount;
+				$orders[$main_runer]["voucher_platform"]=isset($suborder["voucher_platform"]) ? $suborder["voucher_platform"] : 0;
+				$orders[$main_runer]["discount"]=$seller_discount;
 				$orders[$main_runer]["price"]=$suborder["price"];
 				$orders[$main_runer]["order_status"]=$suborder["order_status"];
 
@@ -606,6 +754,10 @@ $order_number=0;
 					$orders[$main_runer]["order_number"]=$suborder["order_number"];
 					$orders[$main_runer]["created_at"]=$suborder["created_at"];
 					$orders[$main_runer]["updated_at"]=$suborder["updated_at"];
+					if (!empty($suborder["cn_event_at"])) {
+						$orders[$main_runer]["cn_event_at"]=$suborder["cn_event_at"];
+						$orders[$main_runer]["updated_at"]=$suborder["cn_event_at"];
+					}
 
 					if($suborder["FullTaxinvoiceID"] != ""){
 					$orders[$main_runer]["taxinvoiceID"]=$suborder["FullTaxinvoiceID"];
@@ -613,8 +765,11 @@ $order_number=0;
 						$orders[$main_runer]["taxinvoiceID"]=$suborder["taxinvoiceID"];
 					}
 					$orders[$main_runer]["shipping_fee"]=$suborder["shipping_fee"];
-					$discount=$suborder["voucher_platform"]+$suborder["voucher_seller"];
-					$orders[$main_runer]["discount"]=$discount;
+					$seller_discount = isset($suborder["seller_discount"]) ? $suborder["seller_discount"] : (isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : 0);
+					$orders[$main_runer]["seller_discount"]=$seller_discount;
+					$orders[$main_runer]["voucher_seller"]=isset($suborder["voucher_seller"]) ? $suborder["voucher_seller"] : $seller_discount;
+					$orders[$main_runer]["voucher_platform"]=isset($suborder["voucher_platform"]) ? $suborder["voucher_platform"] : 0;
+					$orders[$main_runer]["discount"]=$seller_discount;
 					$orders[$main_runer]["price"]=$suborder["price"];
 					$orders[$main_runer]["order_status"]=$suborder["order_status"];
 					$order_number=$suborder["order_number"];
@@ -646,9 +801,102 @@ $order_number=0;
 
            $orders[$main_runer]["suborder"]=$suborder_detail;
 
-           return $orders;
+           return $this->align_shopee_cn_with_tax_report($orders);
 
 	} // end function
+
+	/**
+	 * Same goods/seller/shipping as รายงานภาษีขาย:
+	 * มูลค่าสินค้า = escrow original_price (ราคาก่อนป้ายเหลือง)
+	 * ราคารวม VAT = original_price − seller_discount + shipping.
+	 */
+	function align_shopee_cn_with_tax_report($orders)
+	{
+		if (empty($orders)) {
+			return $orders;
+		}
+		$this->CI->load->model('shopee_orders_model');
+		$sns = array();
+		foreach ($orders as $o) {
+			if (!empty($o['order_number'])) {
+				$sns[] = $o['order_number'];
+			}
+		}
+		$map = $this->CI->shopee_orders_model->get_escrow_tax_map_by_order_sns($sns);
+		$item_map = $this->CI->shopee_orders_model->get_orderitem_original_map_by_order_sns($sns);
+		$escrow_ids = array();
+		foreach ($map as $escrow_row) {
+			if (isset($escrow_row['EscrowID']) && $escrow_row['EscrowID'] !== '' && $escrow_row['EscrowID'] !== null) {
+				$escrow_ids[] = $escrow_row['EscrowID'];
+			}
+		}
+		$escrow_item_map = $this->CI->shopee_orders_model->get_escrow_item_original_map_by_escrow_ids($escrow_ids);
+		foreach ($orders as $i => $o) {
+			$sn = isset($o['order_number']) ? $o['order_number'] : '';
+			if ($sn === '') {
+				continue;
+			}
+			$esc = isset($map[$sn]) ? $map[$sn] : array();
+			$orig = isset($esc['original_price']) ? floatval($esc['original_price']) : 0;
+			$cogs = isset($esc['original_cost_of_goods_sold']) ? floatval($esc['original_cost_of_goods_sold']) : 0;
+			$escrow_line = 0;
+			if (isset($esc['EscrowID']) && isset($escrow_item_map[$esc['EscrowID']])) {
+				$escrow_line = floatval($escrow_item_map[$esc['EscrowID']]);
+			}
+			$item_goods = isset($item_map[$sn]) ? floatval($item_map[$sn]) : 0;
+			$seller = isset($esc['seller_discount']) ? floatval($esc['seller_discount']) : 0;
+			if ($seller == 0.0 && isset($esc['voucher_from_seller'])) {
+				$seller = floatval($esc['voucher_from_seller']);
+			}
+			$goods = 0;
+			$seller_is_net = false;
+			$goods_from_income = false;
+			if ($orig > 0.00001) {
+				$goods = $orig;
+				$goods_from_income = true;
+			} elseif ($cogs > 0.00001) {
+				$goods = $cogs;
+				$seller_is_net = true;
+				$goods_from_income = true;
+			} elseif ($escrow_line > 0.00001) {
+				$goods = $escrow_line;
+			} elseif ($item_goods > 0.00001) {
+				$goods = $item_goods;
+			}
+			if ($goods > 0.00001) {
+				$orders[$i]['price'] = $goods;
+				if ($goods_from_income && isset($esc['buyer_paid_shipping_fee']) && $esc['buyer_paid_shipping_fee'] !== '' && $esc['buyer_paid_shipping_fee'] !== null) {
+					$orders[$i]['shipping_fee'] = floatval($esc['buyer_paid_shipping_fee']);
+				}
+				if (!empty($orders[$i]['suborder'])) {
+					$n = count($orders[$i]['suborder']);
+					if ($n == 1) {
+						$k = key($orders[$i]['suborder']);
+						$orders[$i]['suborder'][$k]['price'] = $goods;
+					} else {
+						$sum = 0;
+						foreach ($orders[$i]['suborder'] as $line) {
+							$sum = $sum + floatval($line['price']);
+						}
+						if ($sum > 0) {
+							foreach ($orders[$i]['suborder'] as $k => $line) {
+								$orders[$i]['suborder'][$k]['price'] = floatval($line['price']) / $sum * $goods;
+							}
+						}
+					}
+				}
+			}
+			if ($seller_is_net) {
+				$seller = 0;
+			}
+			if (!empty($esc) || $seller_is_net) {
+				$orders[$i]['seller_discount'] = $seller;
+				$orders[$i]['voucher_seller'] = $seller;
+				$orders[$i]['discount'] = $seller;
+			}
+		}
+		return $orders;
+	}
 
 	function make_cn_no_shopee($arr_orders){
 		$next_month = "";
@@ -722,16 +970,56 @@ $order_number=0;
     }
 
 
-   function skumap($sku)
-   {
+	function skumap($sku)
+	{
+		$arr=$this->skumap_model->getSkuMap();
+	}
 
+	/**
+	 * Tax / CN amounts.
+	 * Shopee/TikTok: ราคารวม VAT = มูลค่าสินค้า − ส่วนลดร้านค้า + ค่าขนส่ง (ไม่หักส่วนลดแพลตฟอร์ม).
+	 * Lazada: same without ค่าขนส่ง in the tax base.
+	 * VAT is taken from the inclusive amount (/ 1.07).
+	 */
+	function cn_tax_amounts($row, $include_shipping = false)
+	{
+		$price = isset($row['price']) ? floatval($row['price']) : 0;
+		$seller = 0;
+		if (isset($row['seller_discount']) && $row['seller_discount'] !== '' && $row['seller_discount'] !== null) {
+			$seller = floatval($row['seller_discount']);
+		} elseif (isset($row['voucher_seller'])) {
+			$seller = floatval($row['voucher_seller']);
+		}
+		$shipping = isset($row['shipping_fee']) ? floatval($row['shipping_fee']) : 0;
 
-     $arr=$this->skumap_model->getSkuMap();
+		$has_price = array_key_exists('price', $row) && $row['price'] !== '' && $row['price'] !== null;
+		// Grouped daily rows always set ValueBeforeVAT (often 0). Do not treat that as
+		// the amount when price/seller/shipping from the per-order rows are the source.
+		$use_fallback = abs($price) < 0.00001 && abs($seller) < 0.00001 && abs($shipping) < 0.00001
+			&& isset($row['ValueBeforeVAT']);
+		$use_price = $has_price && !$use_fallback;
+		if ($use_price) {
+			$incl = $price - $seller;
+			if ($include_shipping) {
+				$incl = $incl + $shipping;
+			}
+		} else {
+			$incl = isset($row['ValueBeforeVAT']) ? floatval($row['ValueBeforeVAT']) : 0;
+			if (!$include_shipping && isset($row['shipping_fee'])) {
+				$incl = $incl - $shipping;
+			}
+		}
 
-
- 
-
-   }
-
+		$excl = $incl / 1.07;
+		$vat = $incl - $excl;
+		return array(
+			'price' => $price,
+			'seller_discount' => $seller,
+			'shipping_fee' => $include_shipping ? $shipping : 0,
+			'vatincl' => $incl,
+			'vatexcl' => $excl,
+			'vat' => $vat,
+		);
+	}
 
 }

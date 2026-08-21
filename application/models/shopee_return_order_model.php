@@ -58,8 +58,26 @@ class shopee_return_order_model extends CI_Model
 		$query = $this->db->get();
 		return $query->result_array();
 		//return $query->row();
-	}	
+	}
 
+	function select_by_return_sn($return_sn){
+		$this->db->select('*');
+		$this->db->from('shopee_return_order');
+		$this->db->where('return_sn', $return_sn);
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+	function select_by_status_list($statuses){
+		if (empty($statuses)) {
+			return array();
+		}
+		$this->db->select('*');
+		$this->db->from('shopee_return_order');
+		$this->db->where_in('status', $statuses);
+		$query = $this->db->get();
+		return $query->result_array();
+	}
 
 }
 

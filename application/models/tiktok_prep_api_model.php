@@ -45,8 +45,24 @@ class tiktok_prep_api_model extends CI_Model
 		$this->db->where('order_id',$order_id);
 		$query = $this->db->get();
 		return $query->result_array();
-		//return $query->row();
-	}	
+	}
+
+	function select_by_order_id_code($order_id, $code){
+		$this->db->select('*');
+		$this->db->from('tiktok_prep_api');
+		$this->db->where('order_id',$order_id);
+		$this->db->where('code',$code);
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	function select_by_code($code){
+		$this->db->select('*');
+		$this->db->from('tiktok_prep_api');
+		$this->db->where('code',$code);
+		$query = $this->db->get();
+		return $query->result_array();
+	}
 
 }
 

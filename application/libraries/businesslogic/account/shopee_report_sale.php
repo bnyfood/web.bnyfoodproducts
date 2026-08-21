@@ -66,26 +66,35 @@ class Shopee_report_sale
         }else{ // not full invoice
           if($num == 1){
             array_push($arr_pre1,$data);
+            $priceVATincluded = $data['price'] - $data['seller_discount'] + $data['shipping_fee'];
+            $arr_pre1[0]['priceVATincluded'] = $priceVATincluded;
+            $priceBeforeVAT=round($priceVATincluded/1.07,2);
+            $arr_pre1[0]['priceBeforeVAT'] = $priceBeforeVAT;
+            $arr_pre1[0]['VAT'] = $priceVATincluded-$priceBeforeVAT;
             $num = 2;
           }else{
             //print_r($arr_pre1);
             $arr_pre1[0]['end_inv'] = $data['end_inv'];
             $arr_pre1[0]['price'] = $arr_pre1[0]['price']+$data['price'];
-            $arr_pre1[0]['voucher_seller'] = $arr_pre1[0]['voucher_seller']+$data['voucher_seller'];
+            $arr_pre1[0]['seller_discount'] = $arr_pre1[0]['seller_discount']+$data['seller_discount'];
             $arr_pre1[0]['voucher_platform'] = $arr_pre1[0]['voucher_platform']+$data['voucher_platform'];
             $arr_pre1[0]['voucher'] = $arr_pre1[0]['voucher']+$data['voucher'];
+            $arr_pre1[0]['shipping_fee_discount_seller'] = $arr_pre1[0]['shipping_fee_discount_seller']+$data['shipping_fee_discount_seller'];
+            
 
             /*$arr_pre1[0]['shipping_fee_original'] = $arr_pre1[0]['shipping_fee_original']+$data['shipping_fee_original'];
             $arr_pre1[0]['shipping_fee_discount_platform'] = $arr_pre1[0]['shipping_fee_discount_platform']+$data['shipping_fee_discount_platform'];
             $arr_pre1[0]['shipping_fee_discount_seller'] = $arr_pre1[0]['shipping_fee_discount_seller']+$data['shipping_fee_discount_seller'];*/
 
             $arr_pre1[0]['shipping_fee'] = $arr_pre1[0]['shipping_fee']+$data['shipping_fee'];
-            $priceVATincluded = $data['price'] - $data['voucher'] + $data['shipping_fee'];
+            // Same as detail rows: ราคารวม VAT = มูลค่าสินค้า − ส่วนลดร้านค้า + ค่าขนส่ง (ไม่หักส่วนลด Shopee)
+            $priceVATincluded = $data['price'] - $data['seller_discount'] + $data['shipping_fee'];
             $arr_pre1[0]['priceVATincluded'] = $arr_pre1[0]['priceVATincluded']+$priceVATincluded;
             $priceBeforeVAT=round($priceVATincluded/1.07,2);
             $arr_pre1[0]['priceBeforeVAT'] = $arr_pre1[0]['priceBeforeVAT']+$priceBeforeVAT;
             $VAT=$priceVATincluded-$priceBeforeVAT;
             $arr_pre1[0]['VAT'] = $arr_pre1[0]['VAT']+$VAT;
+
             //$arr_pre1[0]['VAT'] = $arr_pre1[0]['VAT']+$data['VAT'];
             //$arr_pre1[0]['VAT'] = $arr_pre1[0]['VAT']+$data['VAT'];
 

@@ -559,6 +559,7 @@ class Purchase_order extends CI_Controller
 			'po_cdate' => $arr_pos['Data'][0]['po_cdate'],
 			'supplier_data' => $supplier_data['Data'],
 			'validdata'=>$validdata,
+			'authorize_signature_url' => $this->_document_signature_url('po', $arr_pos['Data'][0]['po_number'])
 		);
 
 		//print_r($data);
@@ -772,6 +773,12 @@ class Purchase_order extends CI_Controller
 		);
 
 		echo json_encode($arr_data);
+	}
+
+	function _document_signature_url($doc_type, $doc_code, $ref_number = '')
+	{
+		$this->load->model('web_authorize_signature_model');
+		return $this->web_authorize_signature_model->snapshot_url($doc_type, $doc_code, $ref_number);
 	}
 
 }

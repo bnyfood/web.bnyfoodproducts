@@ -207,6 +207,7 @@ class Tiktok extends CI_Controller
         if(count($res['data']['orders']) > 0){
 
             foreach($res['data']['orders'] as $row){
+                
 
                 $array_status_not_death = array('ON_HOLD','UNPAID','PARTIALLY_SHIPPING','AWAITING_SHIPMENT','AWAITING_COLLECTION','IN_TRANSIT','DELIVERED');
                 $array_status_death = array('COMPLETED', 'CANCELLED','Canceled');
@@ -222,41 +223,10 @@ class Tiktok extends CI_Controller
                     $chk_data_db = $this->tiktok_orders_model->get_by_id_status($row['id'],$row['status']);
                     if(empty($chk_data_db)){
 
-                        $arr_dup_datas = array(
-                            'order_id' => $row['id'],
-                            'buyer_email' => $row['buyer_email'],
-                            'buyer_message' => $row['buyer_message'],
-                            'cancel_order_sla_time' => $this->date_util->datetime_unix_to_dt($row['cancel_order_sla_time']),
-                            'collection_time' => $this->date_util->datetime_unix_to_dt($row['collection_time']),
-                            'create_time' => $this->date_util->datetime_unix_to_dt($row['create_time']),
-                            'delivery_option_id' => $row['delivery_option_id'],
-                            'delivery_option_name' => $row['delivery_option_name'],
-                            'delivery_time' => $this->date_util->datetime_unix_to_dt($row['delivery_time']),
-                            'delivery_type' => $row['delivery_type'],
-                            'fulfillment_type' => $row['fulfillment_type'],
-                            'has_updated_recipient_address' => $row['has_updated_recipient_address'],
-                            'is_cod' => $row['is_cod'],
-                            'is_on_hold_order' => $row['is_on_hold_order'],
-                            'is_replacement_order' => $row['is_replacement_order'],
-                            'is_sample_order' => $row['is_sample_order'],
-                            'need_upload_invoice' => $row['need_upload_invoice'],
-                            'paid_time' => $this->date_util->datetime_unix_to_dt($row['paid_time']),
-                            'payment_method_name' => $row['payment_method_name'],
-                            'pick_up_cut_off_time' => $this->date_util->datetime_unix_to_dt($row['pick_up_cut_off_time']),
-                            'rts_sla_time' => $this->date_util->datetime_unix_to_dt($row['rts_sla_time']),
-                            'rts_time' => $this->date_util->datetime_unix_to_dt($row['rts_time']),
-                            'shipping_provider' => $row['shipping_provider'],
-                            'shipping_provider_id' => $row['shipping_provider_id'],
-                            'shipping_type' => $row['shipping_type'],
-                            'status' => 'Packet',
-                            'tracking_number' => $row['tracking_number'],
-                            'tts_sla_time' => $this->date_util->datetime_unix_to_dt($row['tts_sla_time']),
-                            'update_time' => $this->date_util->datetime_unix_to_dt($row['create_time']),
-                            'user_id' => $row['user_id'],
-                            'warehouse_id' => $row['warehouse_id']
-                        );
-                        //print_r($arr_dup_datas);
-                        $this->tiktok_orders_model->insert($arr_dup_datas);   
+                        $data_packed_dup = $this->chk_for_insert_packed($row,$row['status']);
+                        if(!empty($data_packed_dup)){
+                            $this->tiktok_orders_model->insert($data_packed_dup);
+                        }
 
                         /*$data_packed_dup = $this->chk_for_insert_packed($row,$row['status']);
                         if(!empty($data_packed_dup)){
@@ -535,97 +505,54 @@ class Tiktok extends CI_Controller
 
     function chk_for_insert_packed($row,$status_order){
 
-        $date_diff_status = $this->date_util->date_diff($row["create_time"],$row["update_time"]);
         $data_packed_dup = "";
-
-        $array_status_cancel = array('CANCELLED', 'Canceled');
-
-        if (!in_array($status_order, $array_status_cancel)){
-            $arr_chk_packed = $this->tiktok_orders_model->get_by_id_status($row["id"],'Packet');
-            if(empty($arr_chk_packed)){
-                $data_packed_dup=array(
-                    'order_id' => $row['id'],
-                    'buyer_email' => $row['buyer_email'],
-                    'buyer_message' => $row['buyer_message'],
-                    'cancel_order_sla_time' => $this->date_util->datetime_unix_to_dt($row['cancel_order_sla_time']),
-                    'collection_time' => $this->date_util->datetime_unix_to_dt($row['collection_time']),
-                    'create_time' => $this->date_util->datetime_unix_to_dt($row['create_time']),
-                    'delivery_option_id' => $row['delivery_option_id'],
-                    'delivery_option_name' => $row['delivery_option_name'],
-                    'delivery_time' => $this->date_util->datetime_unix_to_dt($row['delivery_time']),
-                    'delivery_type' => $row['delivery_type'],
-                    'fulfillment_type' => $row['fulfillment_type'],
-                    'has_updated_recipient_address' => $row['has_updated_recipient_address'],
-                    'is_cod' => $row['is_cod'],
-                    'is_on_hold_order' => $row['is_on_hold_order'],
-                    'is_replacement_order' => $row['is_replacement_order'],
-                    'is_sample_order' => $row['is_sample_order'],
-                    'need_upload_invoice' => $row['need_upload_invoice'],
-                    'paid_time' => $this->date_util->datetime_unix_to_dt($row['paid_time']),
-                    'payment_method_name' => $row['payment_method_name'],
-                    'pick_up_cut_off_time' => $this->date_util->datetime_unix_to_dt($row['pick_up_cut_off_time']),
-                    'rts_sla_time' => $this->date_util->datetime_unix_to_dt($row['rts_sla_time']),
-                    'rts_time' => $this->date_util->datetime_unix_to_dt($row['rts_time']),
-                    'shipping_provider' => $row['shipping_provider'],
-                    'shipping_provider_id' => $row['shipping_provider_id'],
-                    'shipping_type' => $row['shipping_type'],
-                    'status' => 'Packet',
-                    'tracking_number' => $row['tracking_number'],
-                    'tts_sla_time' => $this->date_util->datetime_unix_to_dt($row['tts_sla_time']),
-                    'update_time' => $this->date_util->datetime_unix_to_dt($row['create_time']),
-                    'user_id' => $row['user_id'],
-                    'warehouse_id' => $row['warehouse_id']
-
-                ); 
+        $db_rows = $this->tiktok_orders_model->get_by_order_id($row["id"]);
+        $db_statuses = array();
+        if (!empty($db_rows)) {
+            foreach ($db_rows as $db_row) {
+                $db_statuses[] = $db_row['status'];
             }
         }
-
-        if (in_array($status_order, $array_status_cancel)){
-            //1800 = 30 hour
-
-            $hour_cn = $this->check_date_holiday($this->date_util->datetime_unix_to_dt($row['create_time']));
-
-            if($date_diff_status > $hour_cn){
-                $arr_chk_packed = $this->tiktok_orders_model->get_by_id_status($row["id"],'Packet');
-                if(empty($arr_chk_packed)){
-                    $data_packed_dup=array(
-                        'order_id' => $row['id'],
-                        'buyer_email' => $row['buyer_email'],
-                        'buyer_message' => $row['buyer_message'],
-                        'cancel_order_sla_time' => $this->date_util->datetime_unix_to_dt($row['cancel_order_sla_time']),
-                        'collection_time' => $this->date_util->datetime_unix_to_dt($row['collection_time']),
-                        'create_time' => $this->date_util->datetime_unix_to_dt($row['create_time']),
-                        'delivery_option_id' => $row['delivery_option_id'],
-                        'delivery_option_name' => $row['delivery_option_name'],
-                        'delivery_time' => $this->date_util->datetime_unix_to_dt($row['delivery_time']),
-                        'delivery_type' => $row['delivery_type'],
-                        'fulfillment_type' => $row['fulfillment_type'],
-                        'has_updated_recipient_address' => $row['has_updated_recipient_address'],
-                        'is_cod' => $row['is_cod'],
-                        'is_on_hold_order' => $row['is_on_hold_order'],
-                        'is_replacement_order' => $row['is_replacement_order'],
-                        'is_sample_order' => $row['is_sample_order'],
-                        'need_upload_invoice' => $row['need_upload_invoice'],
-                        'paid_time' => $this->date_util->datetime_unix_to_dt($row['paid_time']),
-                        'payment_method_name' => $row['payment_method_name'],
-                        'pick_up_cut_off_time' => $this->date_util->datetime_unix_to_dt($row['pick_up_cut_off_time']),
-                        'rts_sla_time' => $this->date_util->datetime_unix_to_dt($row['rts_sla_time']),
-                        'rts_time' => $this->date_util->datetime_unix_to_dt($row['rts_time']),
-                        'shipping_provider' => $row['shipping_provider'],
-                        'shipping_provider_id' => $row['shipping_provider_id'],
-                        'shipping_type' => $row['shipping_type'],
-                        'status' => 'Packet',
-                        'tracking_number' => $row['tracking_number'],
-                        'tts_sla_time' => $this->date_util->datetime_unix_to_dt($row['tts_sla_time']),
-                        'update_time' => $this->date_util->datetime_unix_to_dt($row['create_time']),
-                        'user_id' => $row['user_id'],
-                        'warehouse_id' => $row['warehouse_id']
-
-                    ); 
-                }
-            }
-
+        $api_statuses = array($status_order);
+        $tracking_number = isset($row['tracking_number']) ? $row['tracking_number'] : '';
+        if (!$this->tiktok_bl->should_insert_virtual_packed($api_statuses, $db_statuses, $status_order, $row["id"], $tracking_number)) {
+            return $data_packed_dup;
         }
+
+        $data_packed_dup=array(
+            'order_id' => $row['id'],
+            'buyer_email' => $row['buyer_email'],
+            'buyer_message' => $row['buyer_message'],
+            'cancel_order_sla_time' => $this->date_util->datetime_unix_to_dt($row['cancel_order_sla_time']),
+            'collection_time' => $this->date_util->datetime_unix_to_dt($row['collection_time']),
+            'create_time' => $this->date_util->datetime_unix_to_dt($row['create_time']),
+            'delivery_option_id' => $row['delivery_option_id'],
+            'delivery_option_name' => $row['delivery_option_name'],
+            'delivery_time' => $this->date_util->datetime_unix_to_dt($row['delivery_time']),
+            'delivery_type' => $row['delivery_type'],
+            'fulfillment_type' => $row['fulfillment_type'],
+            'has_updated_recipient_address' => $row['has_updated_recipient_address'],
+            'is_cod' => $row['is_cod'],
+            'is_on_hold_order' => $row['is_on_hold_order'],
+            'is_replacement_order' => $row['is_replacement_order'],
+            'is_sample_order' => $row['is_sample_order'],
+            'need_upload_invoice' => $row['need_upload_invoice'],
+            'paid_time' => $this->date_util->datetime_unix_to_dt($row['paid_time']),
+            'payment_method_name' => $row['payment_method_name'],
+            'pick_up_cut_off_time' => $this->date_util->datetime_unix_to_dt($row['pick_up_cut_off_time']),
+            'rts_sla_time' => $this->date_util->datetime_unix_to_dt($row['rts_sla_time']),
+            'rts_time' => $this->date_util->datetime_unix_to_dt($row['rts_time']),
+            'shipping_provider' => $row['shipping_provider'],
+            'shipping_provider_id' => $row['shipping_provider_id'],
+            'shipping_type' => $row['shipping_type'],
+            'status' => 'Packet',
+            'tracking_number' => $row['tracking_number'],
+            'tts_sla_time' => $this->date_util->datetime_unix_to_dt($row['tts_sla_time']),
+            'update_time' => $this->date_util->datetime_unix_to_dt($row['create_time']),
+            'user_id' => $row['user_id'],
+            'warehouse_id' => $row['warehouse_id'],
+            'is_virtual_packed' => 1
+        );
 
         return $data_packed_dup;
 
@@ -725,18 +652,33 @@ class Tiktok extends CI_Controller
             'ids' => $order_id
         );
 
+        //print_r($querys);
+
         $make_url = $this->tiktok_bl->make_url('GET',$api_url,$querys,NULL,NULL);
 
         $res = $this->tiktok_bl->CallApiToken('GET',$make_url,NULL);
+
+        //print_r($res['data']);
 
         if(!empty($res['data'])){
             //$res['data']['orders'][0]['buyer_email'];
 
             $row = $res['data']['orders'][0];
 
-            $chk_data_db = $this->tiktok_orders_model->get_by_id_status($order_id,$status);
-            if(empty($chk_data_db)){
+            $chk_data_db = $this->tiktok_orders_model->get_by_id_status($row['id'],$row['status']);
+            //echo "------------------<br>";
+            //print_r($chk_data_db);
+            //echo "------------------<br>";
+            if($row['tracking_number'] != ""){
+                $arr_tracking = array(
+                    'is_tracking' => 1 
+                );
 
+                $this->tiktok_taxinvoiceid_model->update_by_order_id($arr_tracking,$row['id']);
+            }
+
+            if(empty($chk_data_db)){
+                echo "<br>>>>>".$row['id']."<<<<<",$row['status']."<br>";
                 $arr_datas = array(
                     'order_id' => $row['id'],
                     'buyer_email' => $row['buyer_email'],
@@ -772,6 +714,7 @@ class Tiktok extends CI_Controller
                 );
                 //print_r($arr_datas);
                 $this->tiktok_orders_model->insert($arr_datas);
+
             }else{//if(empty($chk_data_db)){  
                 $data_up = array(
                     'update_time' => DATE_TIME_NOW
@@ -783,7 +726,6 @@ class Tiktok extends CI_Controller
         }
 
         
-
 
 
      }
@@ -964,7 +906,7 @@ class Tiktok extends CI_Controller
 
     function get_order_details(){
 
-        $id = '579688864124078208';
+        $id = '584301623581509269';
 
         $api_url = "/order/202309/orders";
 
@@ -1049,7 +991,7 @@ class Tiktok extends CI_Controller
                                                     FALSE);
                     //  Insert row data array into your database of choice here
                     //print_r($rowData);
-                $ctime = $rowData[0][25];//Z
+                $ctime = $rowData[0][24];//Y
                 $order_id = $rowData[0][0];
                 $order_status = $rowData[0][1];
                 $cancel_type = $rowData[0][3];
@@ -1057,26 +999,33 @@ class Tiktok extends CI_Controller
                 if($cancel_type == NULL){
                     $cancel_type = "";
                 }
-                $products = $rowData[0][6];
-                $quantity = $rowData[0][9];
+                $products = $rowData[0][6];//G
+                $quantity = $rowData[0][9];//J
+
+                $SKUUnitOriginalPrice = $rowData[0][11];//L
+                $SKUSellerDiscount = $rowData[0][14];//O
 
                 $SubtotalAfterDiscount = $this->explode_thb($rowData[0][15]);//P
                 $ShippingFeeAfterDiscount = $this->explode_thb($rowData[0][16]);//Q
                 $OriginalShippingFee = $this->explode_thb($rowData[0][17]);//R
                 $ShippingFeePlatformDiscount = $this->explode_thb($rowData[0][19]);//T
 
-                $SmallOrderFee = $this->explode_thb($rowData[0][22]);//W
-                $OrderAmount = $this->explode_thb($rowData[0][23]);//X
-                $OrderRefundAmount = $this->explode_thb($rowData[0][24]);//Y
+                //$SmallOrderFee = $this->explode_thb($rowData[0][22]);//W
+                $SmallOrderFee = "";
+                //$OrderAmount = $this->explode_thb($rowData[0][22]);//W
+                $OrderRefundAmount = $this->explode_thb($rowData[0][23]);//X
+
+                $OrderAmount = ($SKUUnitOriginalPrice-$SKUSellerDiscount)+$ShippingFeeAfterDiscount;
                 $AmountExcludeVat = $OrderAmount/1.07;
                 $Vat = $OrderAmount-$AmountExcludeVat;
+
 
                 $date = str_replace('/', '-', $ctime);
                 $date_to_db = date('Y/m/d H:i:s', strtotime($date));
 
-                $PaidTime = $rowData[0][26];//AA
-                $RTSTime = $rowData[0][27];//AB
-                $ShippedTime = $rowData[0][28];//AC
+                $PaidTime = $rowData[0][25];//z
+                $RTSTime = $rowData[0][26];//AA
+                $ShippedTime = $rowData[0][27];//AB
 
                 $date26 = str_replace('/', '-', $PaidTime);
                 $date_to_db26 = date('Y/m/d H:i:s', strtotime($date26));
@@ -1087,12 +1036,12 @@ class Tiktok extends CI_Controller
                 $date28 = str_replace('/', '-', $ShippedTime);
                 $date_to_db28 = date('Y/m/d H:i:s', strtotime($date28));
 
-                $CancelledTime = $rowData[0][30];//AE
+                $CancelledTime = $rowData[0][29];//AD
                 $date30 = str_replace('/', '-', $CancelledTime);
                 $date_to_db30 = date('Y/m/d H:i:s', strtotime($date30));
 
-                $CancelReason = $rowData[0][32];//AG
-                $TrackingID = $rowData[0][35];//AJ
+                $CancelReason = $rowData[0][31];//AF
+                $TrackingID = $rowData[0][34];//AI
 
                 
 
@@ -1106,6 +1055,8 @@ class Tiktok extends CI_Controller
                         'cancel_type' => $cancel_type,
                         'products' => $products,
                         'quantity' => $quantity,
+                        'SKUUnitOriginalPrice' => $SKUUnitOriginalPrice,
+                        'SKUSellerDiscount' => $SKUSellerDiscount,
                         'SubtotalAfterDiscount' => $SubtotalAfterDiscount,
                         'ShippingFeeAfterDiscount' => $ShippingFeeAfterDiscount,
                         'OriginalShippingFee' => $OriginalShippingFee,
@@ -1139,6 +1090,8 @@ class Tiktok extends CI_Controller
                         'cancel_type' => $cancel_type,
                         'products' => $products,
                         'quantity' => $quantity,
+                        'SKUUnitOriginalPrice' => $SKUUnitOriginalPrice,
+                        'SKUSellerDiscount' => $SKUSellerDiscount,
                         'SubtotalAfterDiscount' => $SubtotalAfterDiscount,
                         'ShippingFeeAfterDiscount' => 0,
                         'OriginalShippingFee' => $OriginalShippingFee,
@@ -1839,7 +1792,8 @@ class Tiktok extends CI_Controller
                         'status' => 'Packet',
                         'tracking_number' => $tracking_number,
                         'update_time' => $create_time,
-                        'warehouse_id' => $warehouse_id
+                        'warehouse_id' => $warehouse_id,
+                        'is_virtual_packed' => 1
                     );
 
                     $chk_data = $this->tiktok_orders_model->get_by_order_id($order_id);
@@ -2056,9 +2010,16 @@ class Tiktok extends CI_Controller
 
        $array_status_death = array('COMPLETED','CANCELLED');
 
+       $array_status_cancel = array('CANCELLED','Canceled','UNPAID');
+
         $arr_sho_taxs = $this->tiktok_orders_model->select_by_status_last_arr($array_status_death,50);
 
         foreach($arr_sho_taxs as $arr_sho_tax){
+
+            $is_tracking = 0;
+            if($arr_sho_tax['tracking_number'] != ""){
+                $is_tracking = 1;
+            }
 
             $arr_chk_or = $this->tiktok_taxinvoiceid_model->select_taxinvoiceid_by_orderno($arr_sho_tax['order_id']);
             if(empty($arr_chk_or)){
@@ -2071,7 +2032,8 @@ class Tiktok extends CI_Controller
                  $arr_new_invoice_id = array(
                   'order_id' => $arr_sho_tax['order_id'],
                   'taxinvoiceID' => $new_textinvoiceID,
-                  'create_time' => $arr_sho_tax['create_time']
+                  'create_time' => $arr_sho_tax['create_time'],
+                  'is_tracking' => $is_tracking
                  );
 
                  //print_r($arr_new_invoice_id);
@@ -2091,7 +2053,8 @@ class Tiktok extends CI_Controller
                  $arr_new_invoice_id = array(
                   'order_id' => $arr_sho_tax['order_id'],
                   'taxinvoiceID' => $new_textinvoiceID,
-                  'create_time' => $arr_sho_tax['create_time']
+                  'create_time' => $arr_sho_tax['create_time'],
+                  'is_tracking' => $is_tracking
                  );
 
                 // print_r($arr_new_invoice_id);

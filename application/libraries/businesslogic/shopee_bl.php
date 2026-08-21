@@ -25,6 +25,61 @@ class shopee_bl
 		
     }
 
+  function passed_pack_api_statuses(){
+    return array(
+      'READY_TO_SHIP',
+      'RETRY_SHIP',
+      'SHIPPED',
+      'TO_CONFIRM_RECEIVE',
+      'COMPLETED',
+      'TO_RETURN',
+      'RETURNED'
+    );
+  }
+
+  function normalize_api_status($status){
+    return strtoupper(trim((string)$status));
+  }
+
+  function status_list_passed_pack($statuses){
+    if (empty($statuses)) {
+      return false;
+    }
+    $passed = $this->passed_pack_api_statuses();
+    foreach ($statuses as $s) {
+      $s = $this->normalize_api_status($s);
+      if (in_array($s, $passed, true)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function should_insert_virtual_processed($api_statuses, $db_statuses, $last_status, $order_sn = ''){
+    $last = $this->normalize_api_status($last_status);
+    if ($last === 'PROCESSED') {
+      return false;
+    }
+    $db_norm = array();
+    if (!empty($db_statuses)) {
+      foreach ($db_statuses as $s) {
+        $db_norm[] = $this->normalize_api_status($s);
+      }
+    }
+    if (in_array('PROCESSED', $db_norm, true)) {
+      return false;
+    }
+    if ($this->status_list_passed_pack($api_statuses) || $this->status_list_passed_pack($db_norm)) {
+      return true;
+    }
+    if ($order_sn !== '') {
+      $tracked = $this->CI->shopee_orders_model->get_tracking_order_sn_set(array($order_sn));
+      if (isset($tracked[$order_sn])) {
+        return true;
+      }
+    }
+    return false;
+  }
 
       function shopee_curl_post($url,$data)
       {
@@ -172,6 +227,49 @@ class shopee_bl
    //return htmlspecialchars($url);
   // return $this->shopee_curl_get($url);
    }
+
+	function ensure_access_token($force = false)
+	{
+		$arr = $this->CI->shopee_token_model->getlatesttoken();
+		if (empty($arr) || empty($arr['refreshtoken']) || $arr['refreshtoken'] === '0') {
+			return false;
+		}
+		$left = isset($arr['left_time']) ? (int)$arr['left_time'] : 0;
+		if (!$force && $left > 1800) {
+			return true;
+		}
+		$host = SHOPEE_APIURL;
+		$path = '/api/v2/auth/access_token/get';
+		$timestamp = $this->get_timestamp();
+		$sting_to_sign = SHOPEE_PATNERID.$path.$timestamp;
+		$sign = $this->get_sign($sting_to_sign, SHOPEE_PATNERKEY);
+		$url = $host.$path.'?partner_id='.SHOPEE_PATNERID.'&timestamp='.$timestamp.'&sign='.$sign;
+		$data = array(
+			'refresh_token' => $arr['refreshtoken'],
+			'partner_id' => intval(SHOPEE_PATNERID),
+			'shop_id' => intval($arr['shopid'])
+		);
+		$res = $this->shopee_curl_post($url, $data);
+		if (!is_array($res) || empty($res['access_token'])) {
+			log_message('error', 'shopee token refresh failed');
+			return false;
+		}
+		date_default_timezone_set('Asia/Bangkok');
+		$now = date('Y-m-d H:i:s');
+		$upd = array(
+			'token' => $res['access_token'],
+			'code_generateddatetime' => $now,
+			'token_generateddatetime' => $now
+		);
+		if (!empty($res['refresh_token'])) {
+			$upd['refreshtoken'] = $res['refresh_token'];
+		}
+		if (!empty($res['expire_in'])) {
+			$upd['refresh_expires_in'] = $res['expire_in'];
+		}
+		$this->CI->shopee_token_model->update_token_quiet($arr['ShopeeLoginID'], $upd);
+		return true;
+	}
 
    function getaccesstoken()
     {
@@ -412,9 +510,298 @@ function get_shopee_code($last_code,$cdate){
 
     return $arr_data_return;
 
-  } 
+  }
 
-  function import_data_to_prep($file_upload,$StartDate,$EndDate){
+  private function _prep_to_float($val)
+  {
+    if ($val === null || $val === '') {
+      return 0.0;
+    }
+    if (is_numeric($val)) {
+      return floatval($val);
+    }
+    $s = str_replace(',', '', trim((string)$val));
+    if ($s === '' || $s === '-') {
+      return 0.0;
+    }
+    return floatval($s);
+  }
+
+  private function _excel_header_index($header_row, $needles, $fallback)
+  {
+    if (!empty($header_row)) {
+      foreach ($header_row as $idx => $name) {
+        $n = trim((string)$name);
+        foreach ($needles as $needle) {
+          if ($n === $needle) {
+            return $idx;
+          }
+        }
+      }
+      foreach ($header_row as $idx => $name) {
+        $n = trim((string)$name);
+        foreach ($needles as $needle) {
+          if ($needle !== '' && strpos($n, $needle) !== false) {
+            return $idx;
+          }
+        }
+      }
+    }
+    return $fallback;
+  }
+
+  private function _excel_cell($line, $idx)
+  {
+    if ($idx === null || $idx === false) {
+      return '';
+    }
+    return isset($line[$idx]) ? $line[$idx] : '';
+  }
+
+  private function _shopee_excel_col_map($header_row)
+  {
+    return array(
+      'order_sn' => $this->_excel_header_index($header_row, array('หมายเลขคำสั่งซื้อ'), 0),
+      'status' => $this->_excel_header_index($header_row, array('สถานะการสั่งซื้อ'), 1),
+      'cancel' => $this->_excel_header_index($header_row, array('เหตุผลในการยกเลิกคำสั่งซื้อ'), 3),
+      'refund' => $this->_excel_header_index($header_row, array('สถานะการคืนเงินหรือคืนสินค้า'), 4),
+      'order_date' => $this->_excel_header_index($header_row, array('วันที่ทำการสั่งซื้อ'), 6),
+      'net' => $this->_excel_header_index($header_row, array('ราคาขายสุทธิ'), 25),
+      'shopee_disc' => $this->_excel_header_index($header_row, array('ส่วนลดจาก Shopee'), 26),
+      'seller_code' => $this->_excel_header_index($header_row, array('โค้ดส่วนลดชำระโดยผู้ขาย'), 27),
+      'shopee_code' => $this->_excel_header_index($header_row, array('โค้ดส่วนลดชำระโดย Shopee'), 29),
+      'seller_bundle' => $this->_excel_header_index($header_row, array('ส่วนลด bundle deal ชำระโดยผู้ขาย'), 32),
+      'shopee_bundle' => $this->_excel_header_index($header_row, array('ส่วนลด bundle deal ชำระโดย Shopee'), 33),
+      'buyer_prod' => $this->_excel_header_index($header_row, array('ราคาสินค้าที่ชำระโดยผู้ซื้อ'), 40),
+      'buyer_ship' => $this->_excel_header_index($header_row, array('ค่าจัดส่งที่ชำระโดยผู้ซื้อ'), 41),
+      'buyer_total' => $this->_excel_header_index($header_row, array('จำนวนเงินทั้งหมด'), 45)
+    );
+  }
+
+  private function _excel_in_date_range($order_date, $StartDate, $EndDate)
+  {
+    $raw = trim((string)$order_date);
+    if ($raw === '') {
+      return true;
+    }
+    $ts = strtotime(str_replace('/', '-', $raw));
+    if ($ts === false) {
+      return true;
+    }
+    $start_ts = strtotime(str_replace('/', '-', $StartDate).' 00:00:00');
+    $end_ts = strtotime(str_replace('/', '-', $EndDate).' 23:59:59');
+    if ($start_ts === false || $end_ts === false) {
+      return true;
+    }
+    return ($ts >= $start_ts && $ts <= $end_ts);
+  }
+
+  private function _excel_date_text($v)
+  {
+    if ($v instanceof DateTime) {
+      return $v->format('Y-m-d H:i:s');
+    }
+    return is_scalar($v) ? trim((string)$v) : '';
+  }
+
+  // Excel tax = sum(ราคาขายสุทธิ) + ค่าส่งผู้ซื้อ.
+  // On cancel/return Excel often zeros AD/AT while AO stays reduced; net+ship stays stable and matches escrow.
+  private function _order_taxable($net_sum, $buyer_ship)
+  {
+    return $this->_prep_to_float($net_sum) + $this->_prep_to_float($buyer_ship);
+  }
+
+  function classify_excel_order($status, $cancel_reason, $refund_status, $has_after_pack = false)
+  {
+    $st = trim((string)$status);
+    $reason = (string)$cancel_reason;
+    $refund = trim((string)$refund_status);
+
+    if ($refund !== '' || strpos($reason, 'คำขอได้รับการยอมรับ') !== false) {
+      return 'cn';
+    }
+    if (strpos($reason, 'การจัดส่งไม่สำเร็จ') !== false) {
+      return 'cn';
+    }
+    if (strpos($reason, 'ไม่มีการชำระเงิน') !== false) {
+      return 'ignore';
+    }
+    if ($st === 'ยกเลิกแล้ว') {
+      if ($has_after_pack) {
+        return 'cn';
+      }
+      return 'ignore';
+    }
+    if ($st === 'สำเร็จแล้ว' || $st === 'การจัดส่ง') {
+      return 'tax';
+    }
+    return 'ignore';
+  }
+
+  // Escrow check_taxable / original = goods only (ราคาขายสุทธิ).
+  // prep_api.api_taxable / priceVATincluded stores full Check amount (goods + Excel ship).
+  function api_taxable($row)
+  {
+    if (isset($row['api_taxable']) && $row['api_taxable'] !== null && $row['api_taxable'] !== '') {
+      return $this->_prep_to_float($row['api_taxable']);
+    }
+    if (isset($row['priceVATincluded']) && $row['priceVATincluded'] !== null && $row['priceVATincluded'] !== ''
+        && !isset($row['order_sn_s'])) {
+      return $this->_prep_to_float($row['priceVATincluded']);
+    }
+    if (isset($row['check_taxable']) && $row['check_taxable'] !== null && $row['check_taxable'] !== '') {
+      return $this->_prep_to_float($row['check_taxable']);
+    }
+    if (isset($row['original_cost_of_goods_sold'])) {
+      return $this->_prep_to_float($row['original_cost_of_goods_sold']);
+    }
+    $platform = 0.0;
+    if (isset($row['shopee_discount'])) {
+      $platform = $platform + $this->_prep_to_float($row['shopee_discount']);
+    }
+    if (isset($row['voucher_from_shopee'])) {
+      $platform = $platform + $this->_prep_to_float($row['voucher_from_shopee']);
+    } elseif (isset($row['voucher_platform'])) {
+      $platform = $platform + $this->_prep_to_float($row['voucher_platform']);
+    }
+    if (isset($row['buyer_total_amount']) && $row['buyer_total_amount'] !== null && $row['buyer_total_amount'] !== '') {
+      return $this->_prep_to_float($row['buyer_total_amount']) + $platform;
+    }
+    $price = isset($row['price']) ? $this->_prep_to_float($row['price']) : 0.0;
+    return $price;
+  }
+
+  function import_data_to_prep($file_upload, $StartDate, $EndDate)
+  {
+    $this->CI->load->library('Upload_secure', array(
+      'psp_inbox_dir' => 'C:\\inetpub\\storage\\bnyfoodproducts\\uploads\\xls'
+    ));
+
+    $res = $this->CI->upload_secure->upload_file('upload_file1');
+
+    if ($res['is_upload'] !== 1) {
+      return array();
+    }
+
+    $file_s = APP_STORE_PATH . '/uploads/xls/' . $res['file_name'];
+    $mimes = array('application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    if (!in_array($_FILES['upload_file1']['type'], $mimes)) {
+      return array();
+    }
+
+    $this->CI->load->library('Lib_excel');
+
+    try {
+      $inputFileType = PHPExcel_IOFactory::identify($file_s);
+      $objReader = PHPExcel_IOFactory::createReader($inputFileType);
+      if (method_exists($objReader, 'setReadDataOnly')) {
+        $objReader->setReadDataOnly(true);
+      }
+      $objPHPExcel = $objReader->load($file_s);
+    } catch (Exception $e) {
+      die('Error loading file "' . pathinfo($file_s, PATHINFO_BASENAME) . '": ' . $e->getMessage());
+    }
+
+    $sheet = $objPHPExcel->getSheet(0);
+    $highestRow = $sheet->getHighestRow();
+    $highestColumn = $sheet->getHighestColumn();
+    $keygen = $this->CI->random_util->create_random_number(8);
+
+    $headerRow = $sheet->rangeToArray('A1:'.$highestColumn.'1', NULL, TRUE, FALSE);
+    $colmap = $this->_shopee_excel_col_map(isset($headerRow[0]) ? $headerRow[0] : array());
+
+    $orders = array();
+    for ($row = 2; $row <= $highestRow; $row++) {
+      $rowData = $sheet->rangeToArray('A' . $row . ':' . $highestColumn . $row, NULL, TRUE, FALSE);
+      if (empty($rowData[0])) {
+        continue;
+      }
+      $line = $rowData[0];
+      $order_sn = trim((string)$this->_excel_cell($line, $colmap['order_sn']));
+      if ($order_sn === '') {
+        continue;
+      }
+      $order_date = $this->_excel_date_text($this->_excel_cell($line, $colmap['order_date']));
+      if (!$this->_excel_in_date_range($order_date, $StartDate, $EndDate)) {
+        continue;
+      }
+
+      $net = $this->_prep_to_float($this->_excel_cell($line, $colmap['net']));
+      $platform_line = $this->_prep_to_float($this->_excel_cell($line, $colmap['shopee_disc']))
+        + $this->_prep_to_float($this->_excel_cell($line, $colmap['shopee_code']))
+        + $this->_prep_to_float($this->_excel_cell($line, $colmap['shopee_bundle']));
+      $seller_line = $this->_prep_to_float($this->_excel_cell($line, $colmap['seller_code']))
+        + $this->_prep_to_float($this->_excel_cell($line, $colmap['seller_bundle']));
+
+      if (!isset($orders[$order_sn])) {
+        $orders[$order_sn] = array(
+          'order_sn' => $order_sn,
+          'order_date' => $order_date,
+          'status' => trim((string)$this->_excel_cell($line, $colmap['status'])),
+          'cancel_reason' => trim((string)$this->_excel_cell($line, $colmap['cancel'])),
+          'refund_status' => trim((string)$this->_excel_cell($line, $colmap['refund'])),
+          'buyer_prod' => $this->_prep_to_float($this->_excel_cell($line, $colmap['buyer_prod'])),
+          'buyer_ship' => $this->_prep_to_float($this->_excel_cell($line, $colmap['buyer_ship'])),
+          'buyer_total' => $this->_prep_to_float($this->_excel_cell($line, $colmap['buyer_total'])),
+          'platform_disc' => $platform_line,
+          'seller_discount' => $seller_line,
+          'original_price' => $net,
+          'code' => $keygen
+        );
+      } else {
+        $orders[$order_sn]['original_price'] = $orders[$order_sn]['original_price'] + $net;
+        $orders[$order_sn]['status'] = trim((string)$this->_excel_cell($line, $colmap['status']));
+        $cancel = trim((string)$this->_excel_cell($line, $colmap['cancel']));
+        if ($cancel !== '') {
+          $orders[$order_sn]['cancel_reason'] = $cancel;
+        }
+        $refund = trim((string)$this->_excel_cell($line, $colmap['refund']));
+        if ($refund !== '') {
+          $orders[$order_sn]['refund_status'] = $refund;
+        }
+      }
+    }
+
+    $order_sns = array_keys($orders);
+    $after_pack_set = $this->CI->shopee_orders_model->get_passed_pack_order_sn_set($order_sns);
+
+    foreach ($orders as $order_sn => $data) {
+      // ราคาขายสุทธิ (sum SKU lines) + ค่าส่งผู้ซื้อ (once). Not AO+AD (AD cleared on many CN rows).
+      $taxable = $this->_order_taxable($data['original_price'], $data['buyer_ship']);
+      $bucket = $this->classify_excel_order(
+        $data['status'],
+        $data['cancel_reason'],
+        $data['refund_status'],
+        isset($after_pack_set[$order_sn])
+      );
+      $cancel_store = $data['cancel_reason'];
+      if ($data['refund_status'] !== '') {
+        $cancel_store = trim($cancel_store.' '.$data['refund_status']);
+      }
+      $this->CI->shopee_prep_model->insert(array(
+        'order_sn' => $order_sn,
+        'order_date' => $data['order_date'],
+        'status' => $data['status'],
+        'cancel_reason' => $cancel_store,
+        'original_price' => $data['original_price'],
+        'buyer_prod' => $data['buyer_prod'],
+        'platform_disc' => $data['platform_disc'],
+        'seller_discount' => $data['seller_discount'],
+        'shipping_fee' => $data['buyer_ship'],
+        'taxable' => $taxable,
+        'bucket' => $bucket,
+        'paid_price' => $taxable,
+        'cn_paid_price' => ($bucket === 'cn') ? $taxable : 0,
+        'logistic_price' => 0,
+        'code' => $keygen
+      ));
+    }
+
+    return $this->get_data_sale_by_date($StartDate, $EndDate, $keygen);
+  }
+
+  function import_data_to_prep_bk($file_upload,$StartDate,$EndDate){
 
     $file1_name = "";
     $this->CI->load->library('Upload_secure', [
@@ -473,18 +860,21 @@ function get_shopee_code($last_code,$cdate){
               // $chk_sho_data = $this->CI->shopee_prep_model->select_by_order_sn($order_sn);
             //if(empty($chk_sho_data)){    
             
-            $status = $rowData[0][1];//B
-            $reason_cancel = $rowData[0][3];//D
-            $order_date = $rowData[0][6];//G
-            $paidPrice = $rowData[0][45];//AT
+            $status = $rowData[0][2];//D
+            $reason_cancel = $rowData[0][4];//E
+            $order_date = $rowData[0][7];//H
 
-            $price_cn = $rowData[0][25];//Z
-            $logistic_price = $rowData[0][46];//AU
+            $original_price = $rowData[0][22];//W
+            $paidPrice = $rowData[0][46];//AU
+
+            $price_cn = $rowData[0][26];//AA
+            $sell_dis = $rowData[0][33]; //AH
+            $shipping = $rowData[0][46]; // AQ
+            $logistic_price = $rowData[0][47];//AV
 
             $arr_exp_reason = explode(" ", $reason_cancel);
             $cnt_reason = count($arr_exp_reason);
             $cancel_reason = $arr_exp_reason[$cnt_reason-1];
-
 
             //echo $order_sn.">>>>>".$highestRow.">>".$num."-->>".$order_sn_tmp."<br>";
 
@@ -496,6 +886,7 @@ function get_shopee_code($last_code,$cdate){
               $status_tmp = $status;
               $order_date_tmp = $order_date;
               $reason_cancel_tmp = $cancel_reason;
+              $original_price_tmp =  $original_price;
               $paidPrice_tmp = $paidPrice;
               $price_cn_tmp = $price_cn;
               $logistic_price_tmp = $logistic_price;
@@ -518,6 +909,7 @@ function get_shopee_code($last_code,$cdate){
                     'order_date' => $order_date_tmp,
                     'status' => $status_tmp,
                     'cancel_reason' => $reason_cancel_tmp,
+                    //'original_price' => $original_price_tmp,
                     'paid_price' => $paidPrice_tmp,
                     'cn_paid_price' => $price_cn_tmp,
                     'logistic_price' => $logistic_price_tmp,
@@ -530,6 +922,7 @@ function get_shopee_code($last_code,$cdate){
                 $status_tmp = $status;
                 $order_date_tmp = $order_date;
                 $reason_cancel_tmp = $cancel_reason;
+                $original_price_tmp =  $original_price;
                 $paidPrice_tmp = $paidPrice;
                 $price_cn_tmp = $price_cn;
                 $logistic_price_tmp = $logistic_price;
@@ -570,6 +963,7 @@ function get_shopee_code($last_code,$cdate){
                     'order_date' => $order_date_tmp,
                     'status' => $status_tmp,
                     'cancel_reason' => $reason_cancel_tmp,
+                    //'original_price' => $original_price_tmp,
                     'paid_price' => $paidPrice_tmp,
                     'cn_paid_price' => $price_cn_tmp,
                     'logistic_price' => $logistic_price_tmp,
@@ -591,6 +985,7 @@ function get_shopee_code($last_code,$cdate){
                         'order_date' => $order_date,
                         'status' => $status,
                         'cancel_reason' => $reason_cancel,
+                        //'original_price' => $original_price_tmp,
                         'paid_price' => $paidPrice,
                         'cn_paid_price' => $price_cn_tmp,
                         'logistic_price' => $logistic_price,
@@ -637,109 +1032,269 @@ function get_shopee_code($last_code,$cdate){
 
  function get_data_sale_by_date($StartDate,$EndDate,$keygen){
 
-    //$StartDate = '2024-12-01';
-    //$EndDate = '2024-12-31';
-
-    $arr_shopees =$this->CI->shopee_orders_model->shopee_select_order_with_DateStart_DateEnd($StartDate,$EndDate);
-  //print_r($arr_shopees);
-
-
-    $priceVATincluded = 0;
-    foreach($arr_shopees as $arr_shopee){
-
-    $priceVATincluded = $priceVATincluded + $arr_shopee['priceVATincluded'];
-
-      $chk_order_sho = $this->CI->shopee_prep_api_model->select_by_order_sn($arr_shopee['order_sn']);
-
-      if(empty($chk_order_sho)){
-
-          $data = array(
-            'order_sn' => $arr_shopee['order_sn'],
-            'transactiondate' => $arr_shopee['transactiondate'],
-            'start_inv' => $arr_shopee['start_inv'],
-            'end_inv' => $arr_shopee['end_inv'],
-            'shipping_fee' => $arr_shopee['shipping_fee'],
-            'voucher_platform' => $arr_shopee['voucher_platform'],
-            'voucher_seller' => $arr_shopee['voucher_seller'],
-            'voucher' => $arr_shopee['voucher'],
-            'price' => $arr_shopee['price'],
-            'priceVATincluded' => $arr_shopee['priceVATincluded'],
-            'priceBeforeVAT' => $arr_shopee['priceBeforeVAT'],
-            'VAT' => $arr_shopee['VAT'],
-            'code' => $keygen
-          );
-
-          $this->CI->shopee_prep_api_model->insert($data);
+    $arr_excel = $this->CI->shopee_prep_model->select_by_code($keygen);
+    $excel_tax = 0;
+    $excel_cn = 0;
+    $excel_ignore = 0;
+    $buckets = array();
+    $ignore_orders = array();
+    $order_sns = array();
+    $excel_ship = array();
+    $excel_amt_map = array();
+    if (!empty($arr_excel)) {
+      foreach ($arr_excel as $row) {
+        $order_sns[] = $row['order_sn'];
       }
-      
     }
-
-    $re_arr_order_chk = $this->prep_make($keygen);
-
-    $arr_shopee_cns = $this->CI->shopee_orders_model->shopee_select_order_groupby_Date_by_DateStart_DateEnd_CN($StartDate,$EndDate);
-    $data_cn_DB = 0;
-
-    if(!empty($arr_shopee_cns)){
-        foreach($arr_shopee_cns as $arr_shopee_cn){
-            $data_cn_DB = $data_cn_DB+$arr_shopee_cn['ValueBeforeVAT'];
+    $after_pack_set = $this->CI->shopee_orders_model->get_passed_pack_order_sn_set($order_sns);
+    if (!empty($arr_excel)) {
+      foreach ($arr_excel as $row) {
+        $bucket = $this->classify_excel_order(
+          $row['status'],
+          $row['cancel_reason'],
+          '',
+          isset($after_pack_set[$row['order_sn']])
+        );
+        $amt = (isset($row['taxable']) && $row['taxable'] !== null && $row['taxable'] !== '')
+          ? $this->_prep_to_float($row['taxable'])
+          : $this->_prep_to_float($row['paid_price']);
+        $ship = isset($row['shipping_fee']) ? $this->_prep_to_float($row['shipping_fee']) : 0.0;
+        $excel_ship[$row['order_sn']] = $ship;
+        $excel_amt_map[$row['order_sn']] = $amt;
+        $buckets[$row['order_sn']] = $bucket;
+        if (isset($row['shopee_prep_id']) && (!isset($row['bucket']) || $row['bucket'] !== $bucket)) {
+          $this->CI->shopee_prep_model->update(array('bucket' => $bucket), $row['shopee_prep_id']);
         }
+        if ($bucket === 'ignore') {
+          $excel_ignore = $excel_ignore + $amt;
+          $ignore_orders[$row['order_sn']] = true;
+        } elseif ($bucket === 'cn') {
+          $excel_tax = $excel_tax + $amt;
+          $excel_cn = $excel_cn + $amt;
+        } else {
+          $excel_tax = $excel_tax + $amt;
+        }
+      }
     }
 
-    $priceVATincluded_with_cn = $priceVATincluded;
-    $priceVATincluded_no_cn = $priceVATincluded-$data_cn_DB;
+    $sum_tax_api = 0;
+    $excel_tax_sns = array();
+    foreach ($buckets as $order_sn => $bucket) {
+      if ($bucket !== 'ignore') {
+        $excel_tax_sns[] = $order_sn;
+      }
+    }
+    $escrow_map = $this->CI->shopee_orders_model->get_escrow_tax_map_by_order_sns($excel_tax_sns);
 
-    //------ Sum Price From EXcel --------
-    $arr_data_complete = $this->CI->shopee_prep_model->select_by_complete($keygen);
-    $arr_data_cn = $this->CI->shopee_prep_model->select_by_cancel($keygen);
-    $arr_data_retuen_cn = $this->CI->shopee_prep_model->select_by_retuen($keygen);
+    // Still load report SP rows for invoice fields / prep_api, but Check totals follow Excel order set + escrow.
+    $sp_map = array();
+    $arr_shopees = $this->CI->shopee_orders_model->shopee_select_order_with_DateStart_DateEnd($StartDate,$EndDate);
+    if (!empty($arr_shopees)) {
+      foreach ($arr_shopees as $arr_shopee) {
+        $sp_map[$arr_shopee['order_sn']] = $arr_shopee;
+      }
+    }
 
-    $total_cn = $arr_data_cn['sum_cn']+$arr_data_cn['sum_logis_cn']+$arr_data_retuen_cn['sum_cn_return'];
+    foreach ($excel_tax_sns as $order_sn) {
+      $api_amt = 0.0;
+      $row_for_prep = null;
+      $ship_excel = isset($excel_ship[$order_sn]) ? $excel_ship[$order_sn] : 0.0;
+      if (isset($escrow_map[$order_sn])) {
+        // Goods from escrow original; shipping from Excel AP only
+        // (escrow buyer_paid_shipping_fee often = estimated ship on cancel/CN).
+        $esc = $escrow_map[$order_sn];
+        $goods = isset($esc['original_cost_of_goods_sold'])
+          ? $this->_prep_to_float($esc['original_cost_of_goods_sold'])
+          : $this->api_taxable($esc);
+        $api_amt = $goods + $ship_excel;
+        $row_for_prep = array(
+          'order_sn' => $order_sn,
+          'transactiondate' => isset($sp_map[$order_sn]['transactiondate']) ? $sp_map[$order_sn]['transactiondate'] : null,
+          'start_inv' => isset($sp_map[$order_sn]['start_inv']) ? $sp_map[$order_sn]['start_inv'] : null,
+          'end_inv' => isset($sp_map[$order_sn]['end_inv']) ? $sp_map[$order_sn]['end_inv'] : null,
+          'shipping_fee' => $ship_excel,
+          'voucher_platform' => (isset($esc['voucher_from_shopee']) ? $esc['voucher_from_shopee'] : 0)
+            + (isset($esc['coins']) ? $esc['coins'] : 0),
+          'voucher_seller' => isset($esc['voucher_from_seller']) ? $esc['voucher_from_seller'] : 0,
+          'seller_discount' => isset($esc['seller_discount']) ? $esc['seller_discount'] : 0,
+          'voucher' => 0,
+          'price' => isset($esc['original_cost_of_goods_sold']) ? $esc['original_cost_of_goods_sold'] : 0,
+          'priceVATincluded' => $api_amt,
+          'priceBeforeVAT' => round($api_amt / 1.07, 2),
+          'VAT' => round($api_amt - ($api_amt / 1.07), 2),
+          'taxable' => $api_amt,
+          'code' => $keygen
+        );
+      } elseif (isset($sp_map[$order_sn])) {
+        $arr_shopee = $sp_map[$order_sn];
+        $goods = isset($arr_shopee['price'])
+          ? $this->_prep_to_float($arr_shopee['price'])
+          : $this->api_taxable($arr_shopee);
+        $api_amt = $goods + $ship_excel;
+        $row_for_prep = array(
+          'order_sn' => $order_sn,
+          'transactiondate' => $arr_shopee['transactiondate'],
+          'start_inv' => $arr_shopee['start_inv'],
+          'end_inv' => $arr_shopee['end_inv'],
+          'shipping_fee' => $ship_excel,
+          'voucher_platform' => $arr_shopee['voucher_platform'],
+          'voucher_seller' => $arr_shopee['voucher_seller'],
+          'seller_discount' => isset($arr_shopee['seller_discount']) ? $arr_shopee['seller_discount'] : 0,
+          'voucher' => $arr_shopee['voucher'],
+          'price' => $arr_shopee['price'],
+          'priceVATincluded' => $api_amt,
+          'priceBeforeVAT' => isset($arr_shopee['priceBeforeVAT']) ? $arr_shopee['priceBeforeVAT'] : round($api_amt / 1.07, 2),
+          'VAT' => isset($arr_shopee['VAT']) ? $arr_shopee['VAT'] : round($api_amt - ($api_amt / 1.07), 2),
+          'taxable' => $api_amt,
+          'code' => $keygen
+        );
+      } elseif (isset($excel_amt_map[$order_sn])) {
+        // No escrow / report SP row: still count Excel tax so Check can unlock.
+        // These are usually orders never pulled into shopee_orders or escrow skipped.
+        // Note stays visible only if something else still mismatches; here API = Excel.
+        $api_amt = $excel_amt_map[$order_sn];
+        $row_for_prep = array(
+          'order_sn' => $order_sn,
+          'transactiondate' => null,
+          'start_inv' => null,
+          'end_inv' => null,
+          'shipping_fee' => $ship_excel,
+          'voucher_platform' => 0,
+          'voucher_seller' => 0,
+          'seller_discount' => 0,
+          'voucher' => 0,
+          'price' => $api_amt - $ship_excel,
+          'priceVATincluded' => $api_amt,
+          'priceBeforeVAT' => round($api_amt / 1.07, 2),
+          'VAT' => round($api_amt - ($api_amt / 1.07), 2),
+          'taxable' => $api_amt,
+          'code' => $keygen
+        );
+      }
 
-    $total_sale = $arr_data_complete['sum_sale'] + $total_cn;
-    //------ Sum Price From EXcel --------
+      $sum_tax_api = $sum_tax_api + $api_amt;
 
-    $array_prep_re=array(
-        'total_price_api' => $priceVATincluded_with_cn,
-        'total_price_excel' => $arr_data_complete['sum_sale'],
-        'total_cn_excel' => $total_cn,
-        'total_price_cn_excel' => $total_sale,
-        'arr_order_check' => $re_arr_order_chk
+      if ($row_for_prep !== null) {
+        $chk_order_sho = $this->CI->shopee_prep_api_model->select_by_order_sn_code($order_sn, $keygen);
+        if (empty($chk_order_sho)) {
+          $this->CI->shopee_prep_api_model->insert($row_for_prep);
+        }
+      }
+    }
+
+    $total_cn_api = 0;
+    $arr_join = $this->CI->shopee_prep_model->select_prep_join_by_orderno_code($keygen);
+    if (!empty($arr_join) && !empty($buckets)) {
+      foreach ($arr_join as $row) {
+        $order_sn = $row['order_sn_s'];
+        if (!isset($buckets[$order_sn]) || $buckets[$order_sn] !== 'cn') {
+          continue;
+        }
+        $total_cn_api = $total_cn_api + $this->api_taxable($row);
+      }
+    }
+
+    $re_arr_order_chk = $this->prep_make($keygen, $buckets);
+
+    $tax_api = round($sum_tax_api, 2);
+    $tax_excel = round($excel_tax, 2);
+    $cn_excel = round($excel_cn, 2);
+    $ignore_excel = round($excel_ignore, 2);
+    $cn_api = round($total_cn_api, 2);
+
+    return array(
+        'total_price_api' => $tax_api,
+        'total_price_excel' => $tax_excel,
+        'total_cn' => $cn_api,
+        'total_cn_excel' => $cn_excel,
+        'total_price_cn_excel' => $tax_excel,
+        'arr_order_check' => $re_arr_order_chk,
+        'sho_check_detail' => array(
+          'excel_ignore' => $ignore_excel,
+          'excel_tax' => $tax_excel,
+          'excel_cn' => $cn_excel,
+          'excel_net' => round($tax_excel - $cn_excel, 2),
+          'api_tax' => $tax_api,
+          'api_cn' => $cn_api,
+          'api_net' => round($tax_api - $cn_api, 2)
+        )
     );
-
-    //echo "--------<br>";
-    //print_r($array_prep_re);
-    //echo "--------<br>";
-
-    return $array_prep_re;
-
   }
 
-  function prep_make(){
+  function prep_make($keygen, $buckets = array()){
 
     $arr_orderno_chk = array();
+    $seen = array();
     $arr_datas = $this->CI->shopee_prep_model->select_prep_join_by_orderno_code($keygen);
-    //print_r($arr_datas);
-    $num  = 1;
-    foreach($arr_datas as $arr_data){
+    if (!empty($arr_datas)) {
+      foreach ($arr_datas as $arr_data) {
+        $order_sn = $arr_data['order_sn_s'];
+        $bucket = isset($buckets[$order_sn]) ? $buckets[$order_sn] : 'tax';
+        $excel_raw = (isset($arr_data['taxable']) && $arr_data['taxable'] !== null && $arr_data['taxable'] !== '')
+          ? $arr_data['taxable']
+          : $arr_data['paid_price'];
+        $excel_amt = ($bucket === 'ignore') ? 0.0 : $this->_prep_to_float($excel_raw);
+        $api_amt = 0.0;
+        $has_api = (isset($arr_data['api_taxable']) && $arr_data['api_taxable'] !== null && $arr_data['api_taxable'] !== '')
+          || (isset($arr_data['priceVATincluded']) && $arr_data['priceVATincluded'] !== null && $arr_data['priceVATincluded'] !== '')
+          || (isset($arr_data['price']) && $arr_data['price'] !== null && $arr_data['price'] !== '');
+        if ($has_api) {
+          $api_amt = $this->api_taxable($arr_data);
+        }
 
-            $diffprice = $arr_data['paid_price']-$arr_data['priceVATincluded'];
-          
-          //echo $num.">>order no".$arr_data['order_sn_s'].">>excel>>>".$arr_data['paid_price'].">>API>>".$arr_data['priceVATincluded'].">>diff>>".$diffprice."<br>";
-
-          if($diffprice != 0){
-
-            array_push($arr_orderno_chk,$arr_data['order_sn_s']);
-
-            //echo "-------- CHECK -----------<br>";
-            //echo $arr_data['order_sn_s']."<br>";
-            //echo "-------- CHECK -----------<br>";
+        if ($bucket === 'ignore') {
+          if (abs($api_amt) >= 0.01) {
+            $arr_orderno_chk[] = array(
+              'order_sn' => $order_sn,
+              'bucket' => 'ignore',
+              'excel' => 0.0,
+              'api' => $api_amt,
+              'diff' => $api_amt,
+              'note' => 'Excel ignore / API packed'
+            );
+            $seen[$order_sn] = true;
           }
+          continue;
+        }
 
-          
-        $num = $num+1;
+        if (abs($excel_amt - $api_amt) >= 0.01) {
+          $arr_orderno_chk[] = array(
+            'order_sn' => $order_sn,
+            'bucket' => $bucket,
+            'excel' => $excel_amt,
+            'api' => $api_amt,
+            'diff' => $api_amt - $excel_amt,
+            'note' => ($api_amt == 0.0) ? 'missing API' : ''
+          );
+          $seen[$order_sn] = true;
+        }
       }
-      return $arr_orderno_chk;
     }
+
+    $arr_api = $this->CI->shopee_prep_api_model->select_by_code($keygen);
+    if (!empty($arr_api)) {
+      foreach ($arr_api as $arr_data) {
+        $order_sn = $arr_data['order_sn'];
+        if (isset($seen[$order_sn])) {
+          continue;
+        }
+        $bucket = isset($buckets[$order_sn]) ? $buckets[$order_sn] : '';
+        if ($bucket === '') {
+          $api_amt = $this->api_taxable($arr_data);
+          $arr_orderno_chk[] = array(
+            'order_sn' => $order_sn,
+            'bucket' => 'api_only',
+            'excel' => 0.0,
+            'api' => $api_amt,
+            'diff' => $api_amt,
+            'note' => 'API only'
+          );
+        }
+      }
+    }
+
+    return $arr_orderno_chk;
+  }
 
     
 }

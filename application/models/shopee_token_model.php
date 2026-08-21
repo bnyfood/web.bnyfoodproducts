@@ -92,6 +92,11 @@ function update_by_ShopeeLoginID($ShopeeLoginID,$data){
 		echo $this->db->last_query();
 }
 
+function update_token_quiet($ShopeeLoginID,$data){
+		$this->db->where('ShopeeLoginID',$ShopeeLoginID);
+		return $this->db->update('shopee_token',$data);
+}
+
 
 
 

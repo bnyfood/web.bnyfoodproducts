@@ -1,0 +1,110 @@
+/* Clean step switch: rail (track+thumb) overlays a 4-column options grid */
+.bny-step-switch {
+  position: relative;
+  display: inline-block;
+  width: 240px;
+  max-width: 100%;
+  vertical-align: middle;
+  touch-action: none;
+  user-select: none;
+  box-sizing: border-box;
+  padding: 0 2px 2px;
+}
+.bny-step-switch-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 28px;
+  z-index: 2;
+  pointer-events: none;
+}
+.bny-step-switch-track {
+  position: absolute;
+  left: 12.5%;
+  right: 12.5%;
+  top: 12px;
+  height: 3px;
+  background: #d0d5dd;
+  border-radius: 2px;
+}
+.bny-step-thumb {
+  position: absolute;
+  top: 4px;
+  left: 12.5%;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #1a73e8;
+  box-shadow: 0 0 0 3px #fff, 0 1px 4px rgba(26, 115, 232, 0.35);
+  cursor: grab;
+  transform: translateX(-50%);
+  transition: left 0.15s ease;
+  outline: none;
+  pointer-events: auto;
+  z-index: 3;
+}
+.bny-step-switch.is-dragging .bny-step-thumb {
+  cursor: grabbing;
+  transition: none;
+}
+.bny-step-switch-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  position: relative;
+  z-index: 1;
+}
+.bny-step-switch-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: center;
+}
+.bny-step-switch-opt input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  clip: rect(0, 0, 0, 0);
+  overflow: hidden;
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: none;
+  border: 0;
+}
+.bny-step-dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  margin-top: 9px;
+  border-radius: 50%;
+  background: #c5cad3;
+  box-shadow: 0 0 0 3px #fff;
+}
+.bny-step-label {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: #8a9199;
+  white-space: nowrap;
+}
+.bny-step-switch-opt:hover .bny-step-label {
+  color: #555;
+}
+.bny-step-switch-opt.is-active .bny-step-label,
+.bny-step-switch-opt input[type="radio"]:checked ~ .bny-step-label {
+  color: #1a73e8;
+}
+.bny-step-switch-opt.is-active .bny-step-dot,
+.bny-step-switch-opt input[type="radio"]:checked + .bny-step-dot {
+  visibility: hidden;
+}

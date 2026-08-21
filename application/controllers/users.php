@@ -473,6 +473,7 @@ class Users extends CI_Controller
 			//echo $user_login['ShopID']."---".$sess_shop_id."---".$shopid;
 			//redirect(base_url()."monitor/main",'refresh');
 
+			$this->auth_bl->touch_session_expiry();
 			$logon_res = true;
 		}
 
@@ -485,7 +486,203 @@ class Users extends CI_Controller
 		echo json_encode($data);
 		
 	}
+
+	/**
+	 * JSON: seconds left — driven by real API login token (token_cdate), not a fake timer.
+	 */
+	public function session_status(){
+		$this->load->library('businesslogic/auth_bl');
+		$this->load->library('businesslogic/curl_bl');
+		header('Content-Type: application/json');
+
+		$user_id = $this->session->userdata(SESSION_PREFIX.'user_id');
+		if (empty($user_id)) {
+			echo json_encode(array('Status' => 'Expired', 'remaining' => 0));
+			return;
+		}
+
+		// TEMP: short countdown for re-login UI test
+		if (defined('SESSION_COUNTDOWN_TEST_SEC') && (int)SESSION_COUNTDOWN_TEST_SEC > 0) {
+			$remaining = $this->auth_bl->get_session_remaining();
+			if ($remaining <= 0) {
+				// keep expired at 0 so popup can show
+				$remaining = 0;
+			}
+			echo json_encode(array(
+				'Status' => ($remaining > 0) ? 'Success' : 'Expired',
+				'remaining' => (int)$remaining,
+				'source' => 'test'
+			));
+			return;
+		}
+
+		$arr = $this->curl_bl->CallApiNospi('GET', 'users/token_lifetime');
+		$remaining = 0;
+		if (isset($arr['Status']) && $arr['Status'] == 'Success' && isset($arr['Data']['remaining'])) {
+			$remaining = (int)$arr['Data']['remaining'];
+			$this->session->set_userdata(SESSION_PREFIX.'session_expire_at', time() + $remaining);
+		} else {
+			$remaining = $this->auth_bl->get_session_remaining();
+		}
+
+		echo json_encode(array(
+			'Status' => ($remaining > 0) ? 'Success' : 'Expired',
+			'remaining' => (int)$remaining,
+			'source' => 'api_token'
+		));
+	}
+
+	/**
+	 * Extend real API token window + local countdown.
+	 */
+	public function session_refresh(){
+		$this->load->library('businesslogic/auth_bl');
+		$this->load->library('businesslogic/curl_bl');
+		header('Content-Type: application/json');
+
+		$user_id = $this->session->userdata(SESSION_PREFIX.'user_id');
+		$token_en = get_cookie(COOKIE_PREFIX.'token');
+		$token = $this->encryption_util->decrypt_ssl($token_en);
+		if (empty($user_id) || empty($token)) {
+			echo json_encode(array('Status' => 'Fail', 'Message' => 'Session expired', 'remaining' => 0));
+			return;
+		}
+
+		// TEMP: refresh only local test countdown
+		if (defined('SESSION_COUNTDOWN_TEST_SEC') && (int)SESSION_COUNTDOWN_TEST_SEC > 0) {
+			$remaining = $this->auth_bl->touch_session_expiry();
+			echo json_encode(array(
+				'Status' => 'Success',
+				'remaining' => (int)$remaining,
+				'source' => 'test'
+			));
+			return;
+		}
+
+		$arr = $this->curl_bl->CallApiNospi('POST', 'users/token_touch');
+		if (!(isset($arr['Status']) && $arr['Status'] == 'Success')) {
+			echo json_encode(array(
+				'Status' => 'Fail',
+				'Message' => !empty($arr['Description']) ? $arr['Description'] : 'Token refresh failed',
+				'remaining' => 0
+			));
+			return;
+		}
+
+		$remaining = isset($arr['Data']['remaining']) ? (int)$arr['Data']['remaining'] : $this->auth_bl->touch_session_expiry();
+		$this->session->set_userdata(SESSION_PREFIX.'session_expire_at', time() + $remaining);
+		echo json_encode(array(
+			'Status' => 'Success',
+			'remaining' => $remaining,
+			'source' => 'api_token'
+		));
+	}
+
+	/**
+	 * Remember current page then send browser to Google login (used by timeout popup).
+	 */
+	public function session_google_relogin(){
+		$this->load->helper('cookie');
+		$return_to = trim((string)$this->input->get_post('return_to'));
+		if ($return_to === '') {
+			$return_to = '';
+		}
+		// Only allow relative paths
+		if ($return_to !== '' && strpos($return_to, '://') === false && strpos($return_to, '//') !== 0) {
+			$this->input->set_cookie(array(
+				'name'   => COOKIE_PREFIX.'redirect_after_login',
+				'value'  => ltrim($return_to, '/'),
+				'expire' => 3600,
+				'path'   => '/',
+				'secure' => FALSE
+			));
+		}
+		redirect(base_url().'users/login_with_google', 'refresh');
+	}
+
+	/**
+	 * Re-login from timeout popup (email/password fallback). No captcha.
+	 */
+	public function ajax_relogin(){
+		$this->load->library('businesslogic/auth_bl');
+		$this->load->library('businesslogic/curl_bl');
+		$this->load->library('util/random_util');
+		header('Content-Type: application/json');
+
+		$txt_email = trim((string)$this->input->post('txt_email'));
+		$password = (string)$this->input->post('txt_password');
+		if ($txt_email === '' || $password === '') {
+			echo json_encode(array('Status' => 'Fail', 'Message' => 'Email and password required'));
+			return;
+		}
+
+		$data_curl = array('txt_email' => $txt_email, 'txt_password' => $password);
+		$arr_user_login = $this->curl_bl->call_curl_notoken('POST','users/user_login',$data_curl);
+		$user_login = isset($arr_user_login['Data']['data_user']) ? $arr_user_login['Data']['data_user'] : null;
+		$data_multigroup = isset($arr_user_login['Data']['data_group']) ? $arr_user_login['Data']['data_group'] : null;
+
+		if (empty($user_login)) {
+			echo json_encode(array('Status' => 'Fail', 'Message' => 'Invalid email or password'));
+			return;
+		}
+
+		$this->load->helper('cookie');
+		$datenow = date("YmdHis");
+		$ran_num = $this->random_util->create_random_number(6);
+		$session_id = $user_login['BNYCustomerID'].$datenow.$ran_num;
+
+		$cookie_common = array('expire' => 31536000, 'path' => '/', 'secure' => FALSE);
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'sessionid', 'value' => $session_id, 'expire' => 86400)));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'userid', 'value' => $this->encryption_util->encrypt_ssl($user_login['BNYCustomerID']))));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'usergroupid', 'value' => $this->encryption_util->encrypt_ssl($user_login['usergroup_id']))));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'multigroup', 'value' => $this->encryption_util->encrypt_ssl(json_encode($data_multigroup)))));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'company', 'value' => $this->encryption_util->encrypt_ssl($user_login['CompanyName']))));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'user_name', 'value' => $this->encryption_util->encrypt_ssl($user_login['Name']))));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'email', 'value' => $this->encryption_util->encrypt_ssl($user_login['email']))));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'mobile', 'value' => $this->encryption_util->encrypt_ssl($user_login['Mobile']))));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'token', 'value' => $this->encryption_util->encrypt_ssl($user_login['token']))));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'customer_code', 'value' => $this->encryption_util->encrypt_ssl($user_login['customer_code']))));
+		$sess_shop_id = $this->encryption_util->encrypt_ssl($user_login['ShopID']);
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'shopid', 'value' => $sess_shop_id)));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'customer_type', 'value' => $this->encryption_util->encrypt_ssl($user_login['customer_type']))));
+		$this->input->set_cookie(array_merge($cookie_common, array('name' => COOKIE_PREFIX.'user_level_id', 'value' => $this->encryption_util->encrypt_ssl($user_login['level_id']))));
+
+		$this->session->set_userdata(SESSION_PREFIX.'session_gen_id',$session_id);
+		$this->session->set_userdata(SESSION_PREFIX.'session_bnyu',$txt_email);
+		$this->session->set_userdata(SESSION_PREFIX.'session_bnyp',$password);
+		$this->session->set_userdata(SESSION_PREFIX.'user_id',$this->encryption_util->encrypt_ssl($user_login['BNYCustomerID']));
+		$this->session->set_userdata(SESSION_PREFIX.'usergroup_id',$this->encryption_util->encrypt_ssl($user_login['usergroup_id']));
+		$this->session->set_userdata(SESSION_PREFIX.'multigroup',$data_multigroup);
+		$this->session->set_userdata(SESSION_PREFIX.'company',$user_login['CompanyName']);
+		$this->session->set_userdata(SESSION_PREFIX.'username',$user_login['Name']);
+		$this->session->set_userdata(SESSION_PREFIX.'email',$user_login['email']);
+		$this->session->set_userdata(SESSION_PREFIX.'mobile',$user_login['Mobile']);
+		$this->session->set_userdata(SESSION_PREFIX.'token',$user_login['token']);
+		$this->session->set_userdata(SESSION_PREFIX.'customer_code',$user_login['customer_code']);
+		$this->session->set_userdata(SESSION_PREFIX.'shop_id',$sess_shop_id);
+		$this->session->set_userdata(SESSION_PREFIX.'customer_type',$user_login['customer_type']);
+		$this->session->set_userdata(SESSION_PREFIX.'user_level_id',$user_login['level_id']);
+
+		$ttl = $this->auth_bl->touch_session_expiry();
+		echo json_encode(array(
+			'Status' => 'Success',
+			'remaining' => (int)$ttl,
+			'Message' => ''
+		));
+	}
 	
+	public function set_admin_lang($lang = 'th')
+	{
+		$this->load->helper('admin_lang');
+		$lang = set_admin_lang($lang);
+		$ref = isset($_SERVER['HTTP_REFERER']) ? (string)$_SERVER['HTTP_REFERER'] : '';
+		if ($ref !== '' && strpos($ref, base_url()) === 0) {
+			redirect($ref);
+			return;
+		}
+		redirect('monitor/main');
+	}
+
 	public function logout(){ 
 	//$redirec_path = $this->session->userdata("red_redirect_path");
 	//echo $redirec_path;
@@ -505,6 +702,8 @@ class Users extends CI_Controller
 		$this->session->unset_userdata(SESSION_PREFIX.'shop_id');
 		$this->session->unset_userdata(SESSION_PREFIX.'customer_type');
 		$this->session->unset_userdata(SESSION_PREFIX.'user_level_id');
+		$this->session->unset_userdata(SESSION_PREFIX.'session_expire_at');
+		$this->session->unset_userdata(SESSION_PREFIX.'admin_lang');
 
 		$this->session->sess_destroy();
 
@@ -522,6 +721,7 @@ class Users extends CI_Controller
 		delete_cookie(COOKIE_PREFIX.'shopid');
 		delete_cookie(COOKIE_PREFIX.'customer_type');
 		delete_cookie(COOKIE_PREFIX.'user_level_id');
+		delete_cookie(COOKIE_PREFIX.'redirect_after_login');
 		
 		redirect(base_url().'users/login_with_google', 'refresh');
 	}
@@ -1326,9 +1526,43 @@ class Users extends CI_Controller
 				$shopid = $this->encryption_util->decrypt_ssl($sess_shop_id);
 
 				//echo $user_login['ShopID']."---".$sess_shop_id."---".$shopid;
-				redirect(base_url()."monitor/main",'refresh');
+				$this->load->library('businesslogic/auth_bl');
+				$this->auth_bl->touch_session_expiry();
+				redirect($this->resolve_post_login_redirect(),'refresh');
 		}
 
+	}
+
+	/**
+	 * After Google login: go back to the page that triggered session expiry, else dashboard.
+	 */
+	private function resolve_post_login_redirect(){
+		$this->load->helper('cookie');
+		$path = get_cookie(COOKIE_PREFIX.'redirect_after_login');
+		delete_cookie(COOKIE_PREFIX.'redirect_after_login');
+
+		if (empty($path)) {
+			return base_url().'monitor/main';
+		}
+
+		$path = rawurldecode(trim($path));
+		// Block open redirects / traversal
+		if (
+			strpos($path, '://') !== false
+			|| strpos($path, '//') === 0
+			|| strpos($path, '..') !== false
+			|| strpos($path, "\n") !== false
+			|| strpos($path, "\r") !== false
+		) {
+			return base_url().'monitor/main';
+		}
+
+		$path = ltrim($path, '/');
+		if ($path === '' || strpos($path, 'users/login') === 0 || strpos($path, 'users/logout') === 0) {
+			return base_url().'monitor/main';
+		}
+
+		return base_url().$path;
 	}
 
 	function authen_user(){

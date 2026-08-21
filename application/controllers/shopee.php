@@ -133,8 +133,8 @@ $date = new DateTime();
          );
          $this->shopee_token_model->update_by_ShopeeLoginID( $ShopeeLoginID,$data_toupdate);
          echo "DONE";
-         print_r($data);
-
+         //print_r($data);
+        redirect(base_url() . 'monitor/main', 'refresh');
 
       }
     }
@@ -1744,7 +1744,7 @@ function get_shipping_test(){
        print_r($datas);
 
 //211001MYUMG9SP-->shipped,211001P0BD9UPM ---> not ship
-       
+      
 }
 
 function get_tracking_number(){
@@ -1813,7 +1813,7 @@ function get_tracking_number_more(){
           die("canot init shopee api");
         }
 
-        $arr_shopees = $this->shopee_tracking_model->get_orderno_tracking_round(10);
+        $arr_shopees = $this->shopee_tracking_model->get_orderno_tracking_round(20);
 
         foreach($arr_shopees as $arr_shopee){
 
@@ -1936,6 +1936,40 @@ public function getOrders()
 
 }
 
+function chk_for_insert_processed($row, $orderlist_id, $keygen)
+{
+  $data_processed = "";
+  $db_rows = $this->shopee_orders_model->get_by_sn($row["order_sn"]);
+  $db_statuses = array();
+  if (!empty($db_rows)) {
+    foreach ($db_rows as $db_row) {
+      $db_statuses[] = $db_row['order_status'];
+    }
+  }
+  $api_statuses = array($row["order_status"]);
+  if (!$this->shopee_bl->should_insert_virtual_processed($api_statuses, $db_statuses, $row["order_status"], $row["order_sn"])) {
+    return $data_processed;
+  }
+
+  $data_processed = array(
+    'order_sn'=>$row["order_sn"],
+    'taxinvoiceID'=>"",
+    'order_status'=>'PROCESSED',
+    'total_amount'=>$this->common_util->prep_float($row["total_amount"]),
+    'update_time'=>date('Y-m-d H:i:s',$row["create_time"]),
+    'actual_shipping_fee'=>$this->common_util->prep_float($row["actual_shipping_fee"]),
+    'actual_shipping_fee_confirmed'=>intval($row["actual_shipping_fee_confirmed"]),
+    'cancel_by'=>$row["cancel_by"],
+    'cancel_reason'=>$row["cancel_reason"],
+    'create_time'=>date('Y-m-d H:i:s',$row["create_time"]),
+    'estimated_shipping_fee'=>$row["estimated_shipping_fee"],
+    'OrderListID'=>$orderlist_id,
+    'keygen' => $keygen,
+    'is_virtual_packed'=>1
+  );
+  return $data_processed;
+}
+
 function get_all_status($arr_order_list)
 {
     //echo "we are here";
@@ -2053,39 +2087,17 @@ function get_all_status($arr_order_list)
 
             if(!is_null($row["order_sn"])){
 
-                  //array_push($data_insert_order,$data_order);
                   $order_id_pre = $this->shopee_orders_model->insert($data_order);
                   $this->getEscrowOld($row["order_sn"],$order_id_pre,$orderlist_id_list,$order_status,$order_ctime,$estimated_shipping_fee,$row["order_status"]);
-                  //array_push($data_insert_order,$data_order_dup);
-                  //$make_cn = $this->get_shipping($row["order_sn"],'COMPLETED');
 
-                  if($row["order_status"] != "CANCELLED"){
-                    
+                  $data_order_dup = $this->chk_for_insert_processed($row,$order_list_sn_key_id_value_arr[$row["order_sn"]],$keygen);
+                  if(!empty($data_order_dup)){
                     $order_id_pre_dup = $this->shopee_orders_model->insert($data_order_dup);
                     $this->getEscrowOld($row["order_sn"],$order_id_pre_dup,$orderlist_id_list,'PROCESSED',$order_ctime,$estimated_shipping_fee,$row["order_status"]);
                     $num_data = $num_data +2;
-                  
+                  }else{
+                    $num_data = $num_data +1;
                   }
-
-                  if($row["order_status"] == "CANCELLED"){
-
-                    //echo "CANCELLED->>>>>".$row["cancel_reason"]."<<<<<<<";
-
-                    $make_cn = false;
-                    if (in_array($row["cancel_reason"], $array_cancel_reason)){
-                        $make_cn = true;
-                    }
-
-                    if($make_cn){
-                      //$date_diff_status = $this->date_util->date_diff($row["create_time"],$row["create_time"]); 
-                      //1800 = 30 hour
-                        //if($date_diff_status > 1800){
-                          $order_id_pre_dup = $this->shopee_orders_model->insert($data_order_dup);
-                          $this->getEscrowOld($row["order_sn"],$order_id_pre_dup,$orderlist_id_list,'PROCESSED',$order_ctime,$estimated_shipping_fee,$row["order_status"]);
-                          $num_data = $num_data +2;  
-                        //}
-                    }
-                  }  
 
                   array_push($data_order_no_action,$row["order_sn"]);
              }else{
@@ -2205,30 +2217,10 @@ function get_all_status($arr_order_list)
 
            if($row["order_status"] != "CANCELLED"){
 
-            $arr_chk_process = $this->shopee_orders_model->get_by_sn_status($row["order_sn"],"PROCESSED");
-            if(empty($arr_chk_process)){
-
-              $data_order_process=array(
-                'order_sn'=>$row["order_sn"],
-                'taxinvoiceID'=>"",
-                'order_status'=>'PROCESSED',
-                'total_amount'=>$this->common_util->prep_float($row["total_amount"]),
-                'update_time'=>date('Y-m-d H:i:s',$row["create_time"]),
-                'actual_shipping_fee'=>$this->common_util->prep_float($row["actual_shipping_fee"]),
-                'actual_shipping_fee_confirmed'=>intval($row["actual_shipping_fee_confirmed"]),
-                'cancel_by'=>$row["cancel_by"],
-                'cancel_reason'=>$row["cancel_reason"],
-                'create_time'=>date('Y-m-d H:i:s',$row["create_time"]),
-                'estimated_shipping_fee'=>$row["estimated_shipping_fee"],
-                'cancel_reason'=>$row["cancel_reason"],
-                'OrderListID'=>$order_list_sn_key_id_value_arr[$row["order_sn"]],
-                'keygen' => $keygen
-              );
-
+            $data_order_process = $this->chk_for_insert_processed($row,$order_list_sn_key_id_value_arr[$row["order_sn"]],$keygen);
+            if(!empty($data_order_process)){
               $order_id_pre_dup = $this->shopee_orders_model->insert($data_order_process);
-
               $this->getEscrow($row["order_sn"],$order_id_pre_dup,$orderlist_id_list,$order_ctime,$row["order_status"],0);
-
             }
            }
            
@@ -4971,7 +4963,7 @@ function escrowex(){
 
     function create_update_textinvoiceid(){
 
-        $arr_datas = $this->shopee_taxinvoiceid_model->get_by_null_id(20);
+        $arr_datas = $this->shopee_taxinvoiceid_model->get_by_null_id(50);
 
         print_r($arr_datas);
 
@@ -4994,7 +4986,6 @@ function escrowex(){
                     );
 
                     $this->shopee_taxinvoiceid_model->update($arr_up,$arr_data['Shopee_taxinvoiceid_id']);
-
 
                 }else{
 
@@ -5193,7 +5184,7 @@ function escrowex(){
 
          $order_list_sn_key_id_value_arr=array();
 
-         $order_sn_list='250822FMGX1DXW';
+         $order_sn_list='2605127H982FMK';
 
          $data=array('order_sn_list'=>$order_sn_list,
                      'response_optional_fields'=>'estimated_shipping_fee,recipient_address,actual_shipping_fee,item_list,cancel_by,cancel_reason,actual_shipping_fee_confirmed,total_amount,buyer_username,invoice_data'
@@ -6099,7 +6090,7 @@ if($download_arr['shopee_return_is_finish'] == 0){
 
          $order_list_sn_key_id_value_arr=array();
 
-         $order_sn_list='240925U2JKUSN5';
+         $order_sn_list='2605127H982FMK';
 
          $data=array('order_sn_list'=>'241109S3XADKD3');
          

@@ -107,7 +107,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                     'refresh_expires_in'=>$row["refresh_expires_in"]
                    );
 
-         print_r($data);
+         //print_r($data);
 
         $this->laztoken_model->insert_token($data);
         
@@ -118,6 +118,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         //$this->config->set_item('refresh_token', $row["refresh_token"]);
         //$this->config->set_item('refresh_expires_in', $row["refresh_expires_in"]);
 
+        redirect(base_url() . 'monitor/main', 'refresh');
      	
      }
 
@@ -273,7 +274,7 @@ public function getFinancedetail()
 
         $arr_datainsert = array();
 
-        if(count($datas["data"]) == 0){ //no more data to download from this day
+        if(!isset($datas["data"]) || !is_array($datas["data"]) || count($datas["data"]) == 0){ //no more data to download from this day
 
             echo "done";
             
@@ -483,7 +484,7 @@ public function getFinancedetail_v2()
 
         $arr_datainsert = array();
 
-        if(count($datas["data"]) == 0){ //no more data to download from this day
+        if(!isset($datas["data"]) || !is_array($datas["data"]) || count($datas["data"]) == 0){ //no more data to download from this day
 
             echo "done";
             
@@ -647,7 +648,7 @@ public function getPayout(){
     $data_insert = array();
     if($datas["code"]==0){
 
-        if(count($datas["data"])==0){
+        if(!isset($datas["data"]) || !is_array($datas["data"]) || count($datas["data"])==0){
             echo "done";
 
         }else{
@@ -764,7 +765,6 @@ public function getOrders()
 
         //$chk_is_busy = $this->api_prepare_data_model->select_by_shopid('123456');
 
-
       $arr_latest_order_date=$this->lazada_orders_model->get_next_download_time_last_order();    
      // print_r($arr_latest_order_date);
       $arr_all_order = $this->lazada_orders_model->select_cnt_all();
@@ -879,9 +879,6 @@ public function getOrders()
                             //------End Get New LAZ Order Number------------      
                             
                              $data_update_at = $row["updated_at"];
-                            if($status_order == 'canceled'){
-                                $data_update_at = $row["created_at"];
-                            }
                             $data1=array(
                                 'order_number'=>$row["order_number"],
                                 //'taxinvoiceID' => '',
@@ -898,7 +895,7 @@ public function getOrders()
                                 'status'=>$status_order,
                                 'delivery_info'=>$row["delivery_info"],
                                 'updated_at'=>$this->common_util->getDbDate($data_update_at),
-                               // 'keygen' => $keygen
+                                'is_virtual_packed'=>0,
 
                             );   
 
@@ -919,7 +916,7 @@ public function getOrders()
                                 'status'=>'packed',
                                 'delivery_info'=>$row["delivery_info"],
                                 'updated_at'=>$this->common_util->getDbDate($row["created_at"]),
-                               // 'keygen' => $keygen
+                                'is_virtual_packed'=>1,
 
                             );     
 
@@ -991,7 +988,7 @@ public function getOrders()
                                         'status'=>$status_order,
                                         'delivery_info'=>$row["delivery_info"],
                                         'updated_at'=>$this->common_util->getDbDate($row["updated_at"]),
-                                        //'keygen' => $keygen
+                                        'is_virtual_packed'=>0,
 
                                     );     
 
@@ -1081,67 +1078,37 @@ public function getOrders()
 
     function chk_for_insert_packed($row,$status_order,$tax_code){
 
-        $date_diff_status = $this->date_util->date_diff($row["created_at"],$row["updated_at"]);
-        $array_status_chk = array('damaged_by_3pl', 'delivered', 'failed_delivery', 'lost_by_3pl','ready_to_ship','ready_to_ship_pending','returned','shipped','shipped_back','shipped_back_success');
         $data_packed_dup = "";
-        //if (in_array($status_order, $array_status_chk)){
-        if($status_order != "canceled"){
-            $arr_chk_packed = $this->lazada_orders_model->get_by_sn_status($row["order_number"],'packed');
-            if(empty($arr_chk_packed)){
-                $data_packed_dup=array(
-                    'order_number'=>$row["order_number"],
-                   // 'taxinvoiceID' => '',
-                    'created_at'=>$this->common_util->getDbDate($row["created_at"]),
-                    'shipping_fee_original'=>$this->common_util->prep_float($row["shipping_fee_original"]),
-                    'shipping_fee_discount_platform'=>$this->common_util->prep_float($row["shipping_fee_discount_platform"]),
-                    'shipping_fee_discount_seller'=>$this->common_util->prep_float($row["shipping_fee_discount_seller"]),
-                    'shipping_fee'=>$this->common_util->prep_float($row["shipping_fee"]),
-                    'voucher_platform'=>$this->common_util->prep_float($row["voucher_platform"]),
-                    'voucher_seller'=>$this->common_util->prep_float($row["voucher_seller"]),
-                    'voucher'=>$this->common_util->prep_float($row["voucher"]),
-                    'price'=>$this->common_util->prep_float($row["price"]),
-                    'tax_code'=>$tax_code,
-                    'status'=>'packed',
-                    'delivery_info'=>$row["delivery_info"],
-                    'updated_at'=>$this->common_util->getDbDate($row["created_at"]),
-                   // 'keygen' => $keygen
-
-                ); 
+        $api_statuses = $this->lazada_bl->collect_api_statuses($row, $status_order);
+        $db_rows = $this->lazada_orders_model->get_by_status($row["order_number"]);
+        $db_statuses = array();
+        if (!empty($db_rows)) {
+            foreach ($db_rows as $db_row) {
+                $db_statuses[] = $db_row['status'];
             }
         }
-       // }
 
-        if($status_order == "canceled"){
-            //1800 = 30 hour
-
-            //$hour_cn = $this->check_date_holiday($row["created_at"]);
-
-            //if($date_diff_status > $hour_cn){
-                $arr_chk_packed = $this->lazada_orders_model->get_by_sn_status($row["order_number"],'packed');
-                if(empty($arr_chk_packed)){
-                    $data_packed_dup=array(
-                        'order_number'=>$row["order_number"],
-                       // 'taxinvoiceID' => '',
-                        'created_at'=>$this->common_util->getDbDate($row["created_at"]),
-                        'shipping_fee_original'=>$this->common_util->prep_float($row["shipping_fee_original"]),
-                        'shipping_fee_discount_platform'=>$this->common_util->prep_float($row["shipping_fee_discount_platform"]),
-                        'shipping_fee_discount_seller'=>$this->common_util->prep_float($row["shipping_fee_discount_seller"]),
-                        'shipping_fee'=>$this->common_util->prep_float($row["shipping_fee"]),
-                        'voucher_platform'=>$this->common_util->prep_float($row["voucher_platform"]),
-                        'voucher_seller'=>$this->common_util->prep_float($row["voucher_seller"]),
-                        'voucher'=>$this->common_util->prep_float($row["voucher"]),
-                        'price'=>$this->common_util->prep_float($row["price"]),
-                        'tax_code'=>$tax_code,
-                        'status'=>'packed',
-                        'delivery_info'=>$row["delivery_info"],
-                        'updated_at'=>$this->common_util->getDbDate($row["created_at"]),
-                       // 'keygen' => $keygen
-
-                    ); 
-                }
-            //} //if($date_diff_status > $hour_cn){
-
+        if (!$this->lazada_bl->should_insert_virtual_packed($api_statuses, $db_statuses, $status_order, $row["order_number"])) {
+            return $data_packed_dup;
         }
+
+        $data_packed_dup=array(
+            'order_number'=>$row["order_number"],
+            'created_at'=>$this->common_util->getDbDate($row["created_at"]),
+            'shipping_fee_original'=>$this->common_util->prep_float($row["shipping_fee_original"]),
+            'shipping_fee_discount_platform'=>$this->common_util->prep_float($row["shipping_fee_discount_platform"]),
+            'shipping_fee_discount_seller'=>$this->common_util->prep_float($row["shipping_fee_discount_seller"]),
+            'shipping_fee'=>$this->common_util->prep_float($row["shipping_fee"]),
+            'voucher_platform'=>$this->common_util->prep_float($row["voucher_platform"]),
+            'voucher_seller'=>$this->common_util->prep_float($row["voucher_seller"]),
+            'voucher'=>$this->common_util->prep_float($row["voucher"]),
+            'price'=>$this->common_util->prep_float($row["price"]),
+            'tax_code'=>$tax_code,
+            'status'=>'packed',
+            'delivery_info'=>$row["delivery_info"],
+            'updated_at'=>$this->common_util->getDbDate($row["created_at"]),
+            'is_virtual_packed'=>1,
+        );
 
         return $data_packed_dup;
 
@@ -3314,7 +3281,7 @@ var_dump($c->execute($request, '50000900135c1pxTpiBUQHzlK9sVnthc2IxgoQcrrh6jCT61
 
             $arr_datainsert = array();
 
-            if(count($datas["data"]) == 0){ //no more data to download from this day
+            if(!isset($datas["data"]) || !is_array($datas["data"]) || count($datas["data"]) == 0){ //no more data to download from this day
 
                 $data_preapre_update  = array(
                     'action_date' => $next_day,
@@ -3455,7 +3422,7 @@ var_dump($c->execute($request, '50000900135c1pxTpiBUQHzlK9sVnthc2IxgoQcrrh6jCT61
 
                 $arr_datainsert = array();
 
-                if(count($datas["data"]) == 0){ 
+                if(!isset($datas["data"]) || !is_array($datas["data"]) || count($datas["data"]) == 0){ 
 
                     $data_up = array(
                         'offset' => 0,

@@ -18,8 +18,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/all.min.css'>
     <link rel="stylesheet" href="<?php echo base_url();?>global/css/bootstrap.css">
     <link rel="stylesheet" href="<?php echo base_url();?>global/css/bootstrap-extend.css">
-    <link rel="stylesheet" href="<?php echo base_url();?>resources/theme/css/style_main.css">
-    <link rel="stylesheet" href="<?php echo base_url();?>resources/css/style_addon.css">
+    <link rel="stylesheet" href="<?php echo base_url();?>resources/theme/css/style_main.css?v=<?php echo @filemtime(FCPATH.'resources/theme/css/style_main.css') ?: time(); ?>">
+    <link rel="stylesheet" href="<?php echo base_url();?>resources/css/style_addon.css?v=<?php echo @filemtime(FCPATH.'resources/css/style_addon.css') ?: time(); ?>">
+    <link rel="stylesheet" href="<?php echo base_url();?>resources/css/workspace.css?v=<?php echo @filemtime(FCPATH.'resources/css/workspace.css') ?: time(); ?>">
 
     <link rel="stylesheet" href="<?php echo base_url();?>global/fonts/web-icons/web-icons.min.css">
 

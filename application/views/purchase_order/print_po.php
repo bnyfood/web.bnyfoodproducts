@@ -207,9 +207,15 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     <?php }}?>
     <table class="signature-section" width="100%">
       <tr>
-        <td width="40%" style="border: 1px solid black;border-right:none;">ลงชื่อ_____________________________ผู้มีอำนาจลงนาม<br/><br/><br/>
+        <td width="40%" style="border: 1px solid black;border-right:none;">ลงชื่อ
+          <?php if (!empty($authorize_signature_url)) { ?>
+            <img src="<?php echo $authorize_signature_url; ?>" alt="signature" style="max-height: 70px; vertical-align: middle;">
+          <?php } else { ?>
+            _____________________________
+          <?php } ?>
+          ผู้มีอำนาจลงนาม<br/><br/><br/>
           (___นางพัทธิกาญจน์ สหรัตน์พงษ์___)<br/>
-        วันที่ ___14/01/2568___</td>
+        วันที่ ___<?php echo !empty($po_cdate) ? $po_cdate : ''; ?>___</td>
         <td width="30%" style="border-left:none; border-right:none;" ></td>
         <td width="40%" style="border: 1px solid black;vertical-align: top;border-left:none;" >ประทับตราหน่วยงาน</td>
       </tr>

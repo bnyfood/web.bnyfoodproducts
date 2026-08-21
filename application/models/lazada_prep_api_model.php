@@ -44,10 +44,25 @@ class lazada_prep_api_model extends CI_Model
 		$this->db->from('lazada_prep_api');
 		$this->db->where('order_number',$order_sn);
 		$query = $this->db->get();
-		//echo $this->db->last_query();
 		return $query->result_array();
-		//return $query->row();
-	}	
+	}
+
+	function select_by_order_sn_code($order_sn, $code){
+		$this->db->select('*');
+		$this->db->from('lazada_prep_api');
+		$this->db->where('order_number',$order_sn);
+		$this->db->where('code',$code);
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	function select_by_code($code){
+		$this->db->select('*');
+		$this->db->from('lazada_prep_api');
+		$this->db->where('code',$code);
+		$query = $this->db->get();
+		return $query->result_array();
+	}
 
 }
 

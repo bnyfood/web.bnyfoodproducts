@@ -39,6 +39,23 @@ class shopee_prep_api_model extends CI_Model
 		//return $query->row();
 	}	
 
+	function select_by_code($code){
+		$this->db->select('*');
+		$this->db->from('shopee_prep_api');
+		$this->db->where('code', $code);
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	function select_by_order_sn_code($order_sn, $code){
+		$this->db->select('*');
+		$this->db->from('shopee_prep_api');
+		$this->db->where('order_sn', $order_sn);
+		$this->db->where('code', $code);
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
 	function select_by_order_sn($order_sn){
 		$this->db->select('*');
 		$this->db->from('shopee_prep_api');

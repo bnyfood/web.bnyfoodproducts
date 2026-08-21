@@ -416,7 +416,11 @@
                         </div>
                     </div>
                     <div class="col invoice-sign">
-                        <div class="sign-auth"></div>
+                        <?php if (!empty($authorize_signature_url)) { ?>
+                          <div class="sign-auth" style="border-bottom: none;"><img src="<?php echo $authorize_signature_url; ?>" alt="signature" style="max-height: 70px;"></div>
+                        <?php } else { ?>
+                          <div class="sign-auth"></div>
+                        <?php } ?>
                         <div class="address">ผู้มีอำนาจอนุมัติ / AUTHORIZER</div>
                     </div>
                 </div>

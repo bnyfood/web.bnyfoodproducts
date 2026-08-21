@@ -1,0 +1,72 @@
+inspected at 2026-08-21 10:01:10
+
+===== tables matching return/refund/reverse/cancel (1 rows) =====
+TABLE_NAME
+shopee_return_order
+
+===== shopee_return_order columns (10 rows) =====
+COLUMN_NAME | DATA_TYPE | CHARACTER_MAXIMUM_LENGTH | IS_NULLABLE | COLUMN_DEFAULT
+shopee_return_order_id | bigint |  | NO | 
+return_sn | varchar | 50 | YES | 
+order_sn | varchar | 50 | YES | 
+reason | text | 2147483647 | YES | 
+text_reason | text | 2147483647 | YES | 
+refund_amount | float |  | YES | 
+status | varchar | 50 | YES | 
+start_time | datetime |  | YES | 
+end_time | datetime |  | YES | 
+is_active | int |  | YES | ((0))
+
+===== shopee_return_order sample (5 rows) =====
+shopee_return_order_id | return_sn | order_sn | reason | text_reason | refund_amount | status | start_time | end_time | is_active
+70 | 2608140AXXJ29BH | 260810VXBEFAYD | NOT_RECEIPT | โอนเงินจ่ายแล้วแต่ไม่ได้รับสินค้า เห็นว่าขนส่งตีสินค้ากลับ โทรมาวันเดียวไม่สะดวกได้รับสาย สินค้าตีกลับเลย | 80 | ACCEPTED | 2026-08-14 10:20:36 | 2026-08-14 10:25:39 | 1
+69 | 260811028G8GUMD | 260801735PY67R | NOT_RECEIPT | รอนานมาก 10วันเเล้วยังไม่ได้รับของ | 339 | REQUESTED | 2026-08-10 23:17:36 | 2026-08-11 00:02:42 | 1
+68 | 26073003M7R45TH | 260726PDHPTUJN | ITEM_MISSING | สั่ง สินค้าไป2ถุง แต่ได้มา1ถุง ค่ะ สินค้าไม่ครบ ขอเงินคืน1ถุงค่ะ | 55 | ACCEPTED | 2026-07-30 22:33:34 | 2026-08-01 23:26:54 | 1
+67 | 2607220BS8AJRHN | 260711DQWCV8WE | NOT_RECEIPT | สั่งไปนานแล้วแต่ไม่ได้รับของ ติดต่อทางร้านเพื่อติดตามคำสั่งซื้อ สรุปทางร้านแจ้งว่า ช็อปปี้ส่งสินค้าไม่ทันตามเวลาจึงตีของคืน | 255 | REQUESTED | 2026-07-22 14:38:00 | 2026-07-22 14:38:05 | 1
+66 | 26071903QNN8T6H | 260715PN5DXMQ4 | NOT_RECEIPT | ในรายละเอียดบอกว่า จัดส่งไม่สำเร็จเพราะวัสดุเสียหาย อีกวันบอกส่งคืนผู้ขายละงง
+ ทั้งที่เงินจ่ายไปแล้ว ช่วยคืนเงินด้วย | 145 | ACCEPTED | 2026-07-19 09:48:23 | 2026-07-19 09:49:03 | 1
+
+===== lazada_orders order_make_cn column (7 rows) =====
+COLUMN_NAME | DATA_TYPE | IS_NULLABLE | COLUMN_DEFAULT
+order_number | bigint | YES | 
+price | float | YES | 
+status | varchar | YES | 
+updated_at | datetime | YES | 
+cn_status | int | YES | ((0))
+order_make_cn | int | YES | ((1))
+is_virtual_packed | bit | NO | ((0))
+
+===== lazada_orders order_make_cn distribution (1 rows) =====
+order_make_cn | cnt
+1 | 260477
+
+===== view defs matching cn (5 rows) =====
+name | type_desc
+DF_lazada_orderitems_orderitem_make_cn | DEFAULT_CONSTRAINT
+DF_lazada_orders_cn_status | DEFAULT_CONSTRAINT
+DF_lazada_orders_order_make_cn | DEFAULT_CONSTRAINT
+lazada_orders_cn_date_from_shipped_status_from_latest | VIEW
+lazada_orders_cn_view | VIEW
+
+===== lazada cn view definition snippet (1 rows) =====
+def
+CREATE VIEW dbo.lazada_orders_cn_date_from_shipped_status_from_latest
+AS
+SELECT        a.OrderID, a.order_number, a.taxinvoiceID, a.created_at, a.shipping_fee_original, a.shippin...
+
+===== shopee cn view definition snippet (1 rows) =====
+def
+CREATE VIEW dbo.shopee_orders_cn_date_from_shipped_status_from_latest
+AS
+SELECT        a.OrderID, a.order_sn, a.taxinvoiceID, a.create_time, a.order_status, b.order_status AS lat...
+
+===== tiktok cn view definition snippet (1 rows) =====
+def
+CREATE VIEW dbo.tiktok_orders_cn_date_latest
+AS
+SELECT        a.order_id AS OrderID, a.create_time, a.status AS order_status, b.status AS latest_status, a.create_time AS invoice_...
+
+===== shopee_orders is_return distribution (2 rows) =====
+is_return | cnt
+0 | 141659
+1 | 61

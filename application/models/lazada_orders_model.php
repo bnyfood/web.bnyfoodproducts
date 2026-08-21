@@ -179,14 +179,7 @@ $num=count($arr["statuses"]);
          //echo $sql;
 	    //sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-		{
-			return $query->result_array();
-		}
-		else
-		{
-			return NULL;
-		}	
+		return $this->apply_passed_pack_report_filter($query->result_array());
 
 	}
 
@@ -198,14 +191,7 @@ $num=count($arr["statuses"]);
         // echo $sql;
 	    //sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-		{
-			return $query->result_array();
-		}
-		else
-		{
-			return NULL;
-		}	
+		return $query->result_array();
 
 	}
 
@@ -217,14 +203,7 @@ $num=count($arr["statuses"]);
         // echo $sql;
 	    //sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-		{
-			return $query->result_array();
-		}
-		else
-		{
-			return NULL;
-		}	
+		return $query->result_array();
 
 	}
 
@@ -234,14 +213,7 @@ $num=count($arr["statuses"]);
          $sql="select_order_groupby_Date_by_DateStart_DateEnd_CN_STATUS '".$status."','".$StartDate."','".$EndDate."'";
 	    //sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-		{
-			return $query->result_array();
-		}
-		else
-		{
-			return NULL;
-		}	
+		return $query->result_array();
 
 	}
 
@@ -347,20 +319,13 @@ function select_orders_with_modify_total_Between_Start_End_Date($StartDate,$EndD
 
 	}
 
-	function select_order_with_orderitems_by_DateStart_DateEnd_SearchType($StartDate,$EndDate,$search_type,$ordernumber)
+	function select_order_with_orderitems_by_DateStart_DateEnd_SearchType($StartDate,$EndDate,$search_type,$ordernumber,$voidtype=2)
 	{
-		$sql="select_order_with_orderitems_by_DateStart_DateEnd_SearchType '".$StartDate."','".$EndDate."','".$search_type."','".$ordernumber."'";
+		$sql="select_order_with_orderitems_by_DateStart_DateEnd_SearchType '".$StartDate."','".$EndDate."','".$search_type."','".$ordernumber."',".$voidtype;
 		//echo $sql; 
 		//sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-			{
-				return $query->result_array();
-			}
-		else
-			{
-				return NULL;
-			}	
+		return $this->apply_passed_pack_report_filter($query->result_array());
 
 
 	}
@@ -371,14 +336,7 @@ function select_orders_with_modify_total_Between_Start_End_Date($StartDate,$EndD
 		//echo $sql; 
 		//sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-			{
-				return $query->result_array();
-			}
-		else
-			{
-				return NULL;
-			}	
+		return $this->apply_passed_pack_report_filter($query->result_array());
 
 
 	}
@@ -389,14 +347,7 @@ function select_orders_with_modify_total_Between_Start_End_Date($StartDate,$EndD
 		//echo $sql; 
 		//sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-			{
-				return $query->result_array();
-			}
-		else
-			{
-				return NULL;
-			}	
+		return $query->result_array();
 
 
 	}
@@ -630,14 +581,7 @@ function exten_token($token)
     $sql="select_order_groupby_orderno '".$order_start."','".$order_end."'";
 	    //sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-		{
-			return $query->result_array();
-		}
-		else
-		{
-			return NULL;
-		}	
+		return $this->apply_passed_pack_report_filter($query->result_array());
 
 	}
 
@@ -787,12 +731,243 @@ function exten_token($token)
 		$this->db->where('order_number',$order_sn);
 		$this->db->where('status',$status);
 		$query = $this->db->get();
-		//echo $this->db->last_query();
 		return $query->result_array();
 		
 	}
 
+	function has_status_in($order_number, $statuses)
+	{
+		if ($order_number === '' || $order_number === null || empty($statuses)) {
+			return false;
+		}
+		$this->db->select('OrderID');
+		$this->db->from('lazada_orders');
+		$this->db->where('order_number', $order_number);
+		$this->db->where_in('status', $statuses);
+		$this->db->limit(1);
+		$query = $this->db->get();
+		$row = $query->row_array();
+		return !empty($row);
+	}
 
+	function get_packed_order_number_set($order_numbers){
+		$packed = array();
+		if (empty($order_numbers)) {
+			return $packed;
+		}
+		$chunks = array_chunk(array_values(array_unique($order_numbers)), 500);
+		foreach ($chunks as $chunk) {
+			$this->db->distinct();
+			$this->db->select('order_number');
+			$this->db->from('lazada_orders');
+			$this->db->where('status', 'packed');
+			$this->db->where_in('order_number', $chunk);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					$packed[$row['order_number']] = true;
+				}
+			}
+		}
+		return $packed;
+	}
+
+	function get_after_pack_order_number_set($order_numbers){
+		$found = array();
+		if (empty($order_numbers)) {
+			return $found;
+		}
+		$after_pack = array(
+			'ready_to_ship', 'ready_to_ship_pending', 'shipped', 'shipping',
+			'delivered', 'confirmed', 'returned', 'failed_delivery',
+			'lost_by_3pl', 'damaged_by_3pl', 'shipped_back', 'shipped_back_success',
+			'shipped_back_failed', 'package_scrapped'
+		);
+		$chunks = array_chunk(array_values(array_unique($order_numbers)), 500);
+		foreach ($chunks as $chunk) {
+			$this->db->distinct();
+			$this->db->select('order_number');
+			$this->db->from('lazada_orders');
+			$this->db->where_in('status', $after_pack);
+			$this->db->where_in('order_number', $chunk);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					$found[$row['order_number']] = true;
+				}
+			}
+		}
+		return $found;
+	}
+
+	function get_tracking_order_number_set($order_numbers){
+		$found = array();
+		if (empty($order_numbers)) {
+			return $found;
+		}
+		$chunks = array_chunk(array_values(array_unique($order_numbers)), 500);
+		foreach ($chunks as $chunk) {
+			$this->db->distinct();
+			$this->db->select('order_number');
+			$this->db->from('lazada_tracking');
+			$this->db->where_in('order_number', $chunk);
+			$this->db->where('LEN(LTRIM(RTRIM(ISNULL(tracking_number, \'\')))) >', 0);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					$found[$row['order_number']] = true;
+				}
+			}
+		}
+		return $found;
+	}
+
+	function get_passed_pack_order_number_set($order_numbers){
+		$found = $this->get_after_pack_order_number_set($order_numbers);
+		$tracked = $this->get_tracking_order_number_set($order_numbers);
+		if (!empty($tracked)) {
+			foreach ($tracked as $order_number => $val) {
+				$found[$order_number] = true;
+			}
+		}
+		return $found;
+	}
+
+	function get_prepack_death_order_number_set($order_numbers){
+		$found = array();
+		if (empty($order_numbers)) {
+			return $found;
+		}
+		$chunks = array_chunk(array_values(array_unique($order_numbers)), 500);
+		foreach ($chunks as $chunk) {
+			$this->db->distinct();
+			$this->db->select('order_number');
+			$this->db->from('lazada_orders');
+			$this->db->where_in('status', array('canceled', 'cancelled', 'unpaid', 'pending'));
+			$this->db->where_in('order_number', $chunk);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					$found[$row['order_number']] = true;
+				}
+			}
+		}
+		return $found;
+	}
+
+	// Same join as dbo.lazada_orders_cn_date_from_shipped_status_from_latest:
+	// packed + order_make_cn=1 + a CN death status. Tax report must keep these.
+	function get_cn_eligible_order_number_set($order_numbers){
+		$found = array();
+		if (empty($order_numbers)) {
+			return $found;
+		}
+		$cn_status = array(
+			'lost_by_3pl', 'damaged_by_3pl', 'shipped_back_success',
+			'returned', 'failed_delivery', 'canceled'
+		);
+		$chunks = array_chunk(array_values(array_unique($order_numbers)), 500);
+		foreach ($chunks as $chunk) {
+			$this->db->distinct();
+			$this->db->select('p.order_number');
+			$this->db->from('lazada_orders p');
+			$this->db->join('lazada_orders d', 'd.order_number = p.order_number');
+			$this->db->where('p.status', 'packed');
+			$this->db->where('p.order_make_cn', 1);
+			$this->db->where_in('d.status', $cn_status);
+			$this->db->where_in('p.order_number', $chunk);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					if (!empty($row['order_number'])) {
+						$found[$row['order_number']] = true;
+					}
+				}
+			}
+		}
+		return $found;
+	}
+
+	function is_untrusted_packed($order_number){
+		if ($order_number === '' || $order_number === null) {
+			return false;
+		}
+		$sns = array($order_number);
+		$passed = $this->get_passed_pack_order_number_set($sns);
+		$death = $this->get_prepack_death_order_number_set($sns);
+		$cn = $this->get_cn_eligible_order_number_set($sns);
+		return isset($death[$order_number]) && !isset($passed[$order_number]) && !isset($cn[$order_number]);
+	}
+
+	function filter_orders_not_passed_pack($arr_orders){
+		if (empty($arr_orders)) {
+			return $arr_orders;
+		}
+		$order_numbers = array();
+		foreach ($arr_orders as $row) {
+			if (!empty($row['order_number'])) {
+				$order_numbers[] = $row['order_number'];
+			}
+		}
+		if (empty($order_numbers)) {
+			return $arr_orders;
+		}
+		$passed = $this->get_passed_pack_order_number_set($order_numbers);
+		$death = $this->get_prepack_death_order_number_set($order_numbers);
+		$cn = $this->get_cn_eligible_order_number_set($order_numbers);
+		$kept = array();
+		foreach ($arr_orders as $row) {
+			$sn = isset($row['order_number']) ? $row['order_number'] : '';
+			if ($sn === '') {
+				$kept[] = $row;
+				continue;
+			}
+			if (isset($death[$sn]) && !isset($passed[$sn]) && !isset($cn[$sn])) {
+				continue;
+			}
+			$kept[] = $row;
+		}
+		return $kept;
+	}
+
+	function apply_passed_pack_report_filter($rows){
+		if (empty($rows)) {
+			return NULL;
+		}
+		$rows = $this->filter_orders_not_passed_pack($rows);
+		if (empty($rows)) {
+			return NULL;
+		}
+		return $rows;
+	}
+
+	function get_canceled_order_number_set($order_numbers){
+		$found = array();
+		if (empty($order_numbers)) {
+			return $found;
+		}
+		$chunks = array_chunk(array_values(array_unique($order_numbers)), 500);
+		foreach ($chunks as $chunk) {
+			$this->db->distinct();
+			$this->db->select('order_number');
+			$this->db->from('lazada_orders');
+			$this->db->where_in('status', array('canceled', 'cancelled'));
+			$this->db->where_in('order_number', $chunk);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					$found[$row['order_number']] = true;
+				}
+			}
+		}
+		return $found;
+	}
 
 	function get_by_not_status($order_sn,$status){
 

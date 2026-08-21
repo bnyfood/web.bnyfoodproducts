@@ -1,0 +1,61 @@
+﻿
+
+===== shopee_orders_status (9) =====
+order_status | n
+PROCESSED	61820
+COMPLETED	61110
+CANCELLED	6430
+SHIPPED	3970
+TO_CONFIRM_RECEIVE	3778
+READY_TO_SHIP	2599
+UNPAID	2253
+IN_CANCEL	7
+TO_RETURN	4
+
+===== shopee_return_status (4) =====
+status | n
+ACCEPTED	36
+CANCELLED	23
+REFUND_PAID	9
+REQUESTED	2
+
+===== lazada_orders_status (16) =====
+status | n
+packed	92193
+delivered	79914
+confirmed	23908
+shipped	15861
+pending	15738
+canceled	15656
+ready_to_ship	13617
+shipped_back_success	1988
+unpaid	1327
+failed_delivery	268
+shipped_back	107
+lost_by_3pl	33
+	16
+damaged_by_3pl	15
+returned	14
+	1
+
+===== lazada_return_status (0) =====
+(empty)
+
+===== tiktok_orders_status (11) =====
+status | n
+Packet	19773
+Completed	19198
+AWAITING_SHIPMENT	5130
+IN_TRANSIT	3039
+AWAITING_COLLECTION	2405
+DELIVERED	1819
+CANCELLED	1694
+Shipped	654
+Canceled	484
+UNPAID	78
+ON_HOLD	1
+
+===== tiktok_return_status (2) =====
+record_type | status | n
+cancel	CANCELLATION_REQUEST_COMPLETE	37
+cancel	CANCELLATION_REQUEST_CANCEL	3

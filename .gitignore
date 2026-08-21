@@ -1,0 +1,7 @@
+﻿# Checkpoint hygiene (added 2026-08-21)
+.cursor/
+*.log
+application/third_party/api/**/logs/
+application/logs/*
+!application/logs/index.html
+sandbox/sql/probe_*.json

@@ -1,0 +1,446 @@
+.dashboard-app {
+  min-height: calc(100vh - 36px);
+}
+
+.bny-ws {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.bny-ws-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.bny-ws-other {
+  display: none;
+  flex-direction: column;
+  background: #eceef2;
+  border-bottom: 1px solid #c5cad3;
+}
+
+.bny-ws-other.has-other {
+  display: flex;
+}
+
+.bny-ws-level1 {
+  display: none;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 6px 10px 0;
+  background: #eceef2;
+  min-height: 34px;
+}
+
+.bny-ws-other .bny-ws-level1 {
+  background: transparent;
+}
+
+.bny-ws-level1.has-other {
+  display: flex;
+}
+
+.bny-ws-other-docs {
+  background: #e8ebf1;
+  padding: 0 10px 6px 28px;
+}
+
+.bny-ws-other .bny-ws-other-docs.has-tabs {
+  display: flex;
+  border-bottom: 0;
+}
+
+.bny-ws-nest-label {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  margin: 0 8px 4px 0;
+  color: #666;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.bny-ws-other-docs .bny-ws-nest-label::before {
+  content: "↳ ";
+  color: #888;
+}
+
+.bny-ws-here-label {
+  font-weight: 600;
+  color: #444;
+}
+
+.bny-ws-other-docs .bny-doc-tab {
+  max-width: 280px;
+  background: #f4f5f8;
+  font-size: 11px;
+}
+
+.bny-ws-lv1-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 520px;
+  padding: 6px 12px 7px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: #d7dbe3;
+  color: #333;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.bny-ws-lv1-tab:hover {
+  background: #e4e7ee;
+  color: #111;
+  text-decoration: none;
+}
+
+.bny-ws-lv1-tab.is-active {
+  background: #fff;
+  border-color: #c5cad3;
+  color: #1f1f1f;
+  font-weight: 600;
+}
+
+.bny-ws-close-all {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  margin: 0 6px 4px 0;
+  padding: 4px 10px;
+  border: 1px solid #c5cad3;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bny-ws-close-all:hover {
+  background: #f3f4f7;
+  color: #111;
+}
+
+.bny-ws-lv1-tab .bny-doc-tab-x {
+  flex: 0 0 auto;
+}
+
+.bny-ws-lv1-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bny-ws-lv1-docs {
+  color: #666;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.bny-ws-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.bny-ws-crumb-sep {
+  color: #aaa;
+}
+
+.bny-ws-crumb-link {
+  color: #373193;
+}
+
+.bny-ws-crumb-item.is-current {
+  color: #222;
+  font-weight: 600;
+}
+
+.bny-ai-debug-wrap {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 0;
+  margin: 0 0 0 8px;
+  vertical-align: middle;
+}
+
+.bny-ai-debug-tog {
+  margin: 0;
+  color: #b0b8c0;
+  font-size: 11px;
+  font-weight: 400;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.bny-ai-debug-tog input {
+  margin: 0 3px 0 0;
+  vertical-align: -1px;
+}
+
+.bny-ai-debug[hidden] {
+  display: none !important;
+}
+
+.bny-ai-debug {
+  display: none;
+  flex: 1 1 220px;
+  color: #9aa3ad;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 400;
+  word-break: break-all;
+  user-select: text;
+}
+
+.bny-ai-debug-wrap.is-on .bny-ai-debug {
+  display: inline;
+}
+
+.bny-doc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 8px 12px;
+}
+
+.bny-doc-toolbar .bny-doc-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bny-doc-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bny-doc-search .form-control,
+.bny-doc-search select {
+  height: 32px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.bny-doc-search #platform {
+  width: 120px;
+  flex: 0 0 auto;
+}
+
+.bny-doc-search #search_type {
+  width: 190px;
+  flex: 0 0 auto;
+}
+
+.bny-doc-search .bny-doc-order {
+  width: 170px;
+  flex: 0 0 auto;
+}
+
+.bny-doc-search .bny-doc-radios {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 13px;
+  color: #444;
+  white-space: nowrap;
+}
+
+.bny-doc-search .bny-doc-radios label {
+  margin: 0;
+  font-weight: 400;
+}
+
+.bny-doc-search .bny-doc-dates {
+  width: 230px;
+  flex: 0 0 auto;
+}
+
+.bny-doc-search .btn {
+  height: 32px;
+  padding: 4px 14px;
+  font-size: 13px;
+}
+
+.bny-doc-tabs {
+  display: none;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 0 10px;
+  background: #f4f5f7;
+  border-bottom: 1px solid #c5cad3;
+  min-height: 32px;
+  overflow-x: auto;
+}
+
+.bny-doc-tabs.has-tabs {
+  display: flex;
+}
+
+.bny-doc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 420px;
+  padding: 6px 8px 6px 12px;
+  border: 1px solid #c5cad3;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: #e6e8ee;
+  color: #333;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bny-doc-tab.is-active {
+  background: #fff;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+.bny-doc-tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bny-doc-tab-x,
+.bny-doc-tab-print {
+  border: 0;
+  background: transparent;
+  color: #777;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  padding: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.bny-doc-tab-x:hover,
+.bny-doc-tab-print:hover {
+  background: #d0d4dc;
+  color: #111;
+}
+
+.bny-doc-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 62vh;
+  background: #fff;
+  border-top: 1px solid #d8dce3;
+}
+
+.bny-doc-empty {
+  padding: 28px 16px;
+  color: #888;
+  font-size: 13px;
+}
+
+.bny-doc-pane {
+  display: none;
+  position: absolute;
+  inset: 0;
+}
+
+.bny-doc-pane.is-active {
+  display: block;
+}
+
+.bny-doc-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.bny-doc-loading {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.72);
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #444;
+  z-index: 2;
+}
+
+.bny-doc-loading.is-on {
+  display: flex;
+}
+
+.dashboard-content.bny-doc-host {
+  padding: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.taxinvoice-host > .bny-doc-stage {
+  min-height: 0;
+  height: 0;
+  overflow: hidden;
+  border-top: none;
+}
+.taxinvoice-host > .bny-doc-tabs.has-tabs + .bny-doc-stage {
+  min-height: 72vh;
+  height: 72vh;
+  overflow: hidden;
+  border-top: 1px solid #d8dce3;
+}
+
+@media print {
+  .dashboard-nav,
+  .dashboard-toolbar,
+  .bny-ws-other,
+  .bny-ws-level1,
+  .bny-ws-crumb,
+  .bny-doc-toolbar,
+  .bny-doc-tabs,
+  .session-toolbar,
+  .taxinvoice-results,
+  .bny-list-print-hide {
+    display: none !important;
+  }
+  .dashboard-app {
+    margin: 0 !important;
+  }
+  .bny-doc-stage,
+  .bny-doc-pane.is-active,
+  .bny-doc-frame {
+    position: static !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+}

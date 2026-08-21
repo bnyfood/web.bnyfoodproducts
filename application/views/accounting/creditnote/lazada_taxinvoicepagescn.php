@@ -9,72 +9,89 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         <link href="/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
         <link href="/assets/css/style.css" rel="stylesheet" type="text/css" />        
     <style>
-     table {
+      .cn-sheet {
+        page-break-after: always;
+        break-after: page;
+      }
+      .cn-sheet:last-of-type {
+        page-break-after: auto;
+        break-after: auto;
+      }
+      table {
         width: 100%;
-        height: 100%; 
+        height: auto;
         background: #FFF;
-        overflow:visible;
-        page-break-before: always;
-        table-layout:fixed;
+        overflow: visible;
+        page-break-before: auto;
+        table-layout: fixed;
         border: 0px solid white;
         border-spacing: 0px;
         border-collapse: separate;
         margin-top: 0.1em;
         margin-bottom: 0.1em;
       }
-
-      td { 
+      table table {
+        height: auto !important;
+        page-break-before: auto !important;
+        page-break-after: auto !important;
+      }
+      td {
         padding: 0.1em;
         font-size: 1em;
-        height: 1em;
+        height: auto;
       }
-
-      tr { line-height:.01em; }
-
+      tr {
+        line-height: 1.2;
+        page-break-inside: auto;
+      }
       body {
-            padding-top:0.5em;
+        padding-top: 0.5em;
       }
-
-      .bny{
+      .bny {
         font-size: 2em;
         line-height: 1.2em;
       }
-
-      .taxinvoice{
+      .taxinvoice {
         font-size: 1.6em;
         font-weight: bolder;
         height: 2.5em;
       }
-
-      .taxinvoicenumber{
-       font-size: 1.2em;
-       line-height: 1.2em;
+      .taxinvoicenumber {
+        font-size: 1.2em;
+        line-height: 1.2em;
       }
-
       .taxinvoicenumberbold {
         font-size: 1.2em;
         line-height: 1.2em;
         font-weight: bold;
       }
-
-      .transacdetail{
+      .transacdetail {
         padding: 1em;
         font-size: 1.2em;
         overflow-wrap: normal;
       }
-
-      .conclution{
+      .conclution {
         padding: 1em !important;
-        line-height: 0.001em  !important;
-        font-size:3em;
+        line-height: 0.001em !important;
+        font-size: 3em;
       }
-
-      .table_border{
-        filter: alpha(opacity=40); 
+      .table_border {
+        filter: alpha(opacity=40);
         opacity: 0.95;
-        border:1px black solid;
-        border-radius:6px;
-        -moz-border-radius:6px;
+        border: 1px black solid;
+        border-radius: 6px;
+        -moz-border-radius: 6px;
+      }
+      @media print {
+        thead {
+          display: table-row-group !important;
+        }
+        tr {
+          page-break-inside: auto !important;
+        }
+        table {
+          height: auto !important;
+        }
       }
     </style>
   </head>
@@ -91,6 +108,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     foreach($orders as $row)
     {
   ?>
+  <div class="cn-sheet">
   <table >
     <col style="width:20%">
     <col style="width:30%">
@@ -222,37 +240,37 @@ defined('BASEPATH') OR exit('No direct script access allowed');
           $priceacc=$priceacc+$suborder_detail["price"];
           }
 
-          $total_refund_val = $row["total_refund_val"];
-          $shipping_fee = $row["shipping_fee"];
-          $discount = $row["discount"];
-          if($latest_status == "returned"){
-            $shipping_fee = $total_refund_val - $sum_cn;
-             $discount = 0;
-          }
-
-          $price=$priceacc+$shipping_fee-$discount;
-          $pricebeforeVAT=$price/1.07;
-          $VAT=$price-$pricebeforeVAT;
+          $tax = $this->order_util->cn_tax_amounts($row, false);
+          $priceacc = $tax['price'];
+          $seller_disc = $tax['seller_discount'];
+          $price = $tax['vatincl'];
+          $pricebeforeVAT = $tax['vatexcl'];
+          $VAT = $tax['vat'];
 
         ?> 
         <tr class="taxinvoicenumber">
           <td></td>
-          <td colspan="2">รวมค่าสินค้า</td>
+          <td colspan="2">มูลค่าสินค้า (ราคาก่อนส่วนลด)</td>
           <td style="text-align: right;padding-right: 10px"><?php echo number_format($priceacc,2)?></td>
         </tr>
         <tr class="taxinvoicenumber">
           <td></td>
-          <td colspan="2">ค่าขนส่ง</td>
-          <td style="text-align: right;padding-right: 10px"><?php echo number_format($shipping_fee,2)?></td>
+          <td colspan="2">ส่วนลดร้านค้า</td>
+          <td style="text-align: right;padding-right: 10px"><?php echo number_format($seller_disc,2)?></td>
         </tr>
         <tr class="taxinvoicenumber">
           <td></td>
-          <td colspan="2">ส่วนลด</td>
-          <td style="text-align: right;padding-right: 10px"><?php echo number_format($discount,2)?></td>
+          <td colspan="2">ราคาไม่รวม VAT</td>
+          <td style="text-align: right;padding-right: 10px"><?php echo number_format($pricebeforeVAT,2)?></td>
         </tr>
         <tr class="taxinvoicenumber">
           <td></td>
-          <td colspan="2">จำนวนเงินหลังหักส่วนลด</td>
+          <td colspan="2">ภาษีมูลค่าเพิ่ม (VAT)</td>
+          <td style="text-align: right;padding-right: 10px"><?php echo number_format($VAT,2)?></td>
+        </tr>
+        <tr class="taxinvoicenumber">
+          <td></td>
+          <td colspan="2">ราคารวม VAT</td>
           <td style="text-align: right;padding-right: 10px"><?php echo number_format($price,2)?></td>
         </tr>
         <tr class="taxinvoicenumber">
@@ -270,25 +288,34 @@ defined('BASEPATH') OR exit('No direct script access allowed');
           <td colspan="2">ผลต่าง</td>
           <td style="text-align: right;padding-right: 10px"><?php echo number_format($price,2)?></td>
         </tr>
-        <tr class="taxinvoicenumber">
-          <td></td>
-          <td colspan="2">ภาษีมูลค่าเพิ่ม</td>
-          <td style="text-align: right;padding-right: 10px"><?php echo number_format($VAT,2)?></td>
-        </tr>
       </table>  
     </td>
    </tr>
    <tr>
-    <td colspan="5"> 
+    <td colspan="5">
+      <?php
+        $doc_date = date_create($row["updated_at"]);
+        $doc_date_txt = date_format($doc_date, "d/F/Y");
+        $sig_url = !empty($row['authorize_signature_url']) ? $row['authorize_signature_url'] : '';
+      ?>
       <table class='table_border'>
-
-        <tr><td style="text-align: right;padding: 40px 10px 20px 0px">อณุมัติโดย________________________</td></tr>
-        <tr><td style="text-align: right;padding: 10px 10px 40px 0px">วันที่____________________________</td></tr>
-      </table>  
+        <tr>
+          <td style="text-align: right;padding: 20px 10px 10px 0px">
+            อนุมัติโดย
+            <?php if ($sig_url !== '') { ?>
+              <img src="<?php echo $sig_url; ?>" alt="signature" style="max-height: 80px; vertical-align: middle; margin: 0 8px;">
+            <?php } else { ?>
+              ________________________
+            <?php } ?>
+          </td>
+        </tr>
+        <tr><td style="text-align: right;padding: 10px 10px 40px 0px">วันที่ <?php echo $doc_date_txt; ?></td></tr>
+      </table>
     </td>
    </tr>
   </tbody>
 </table>
+  </div>
                                                 <!--end table-->
    <?php
       }// for loop order page

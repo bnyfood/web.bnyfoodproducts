@@ -14,14 +14,32 @@
               <div class="form-group row">
                 <label class="col-md-3 col-form-label">Domain : </label>
                 <div class="col-md-7">
-                  <input type="text" class="form-control" name="web_domain_name" id='web_domain_name' autocomplete="off" value="<?php echo $arr_domain['web_domain_name']?>" required>
+                  <input type="text" class="form-control" name="web_domain_name" id='web_domain_name' autocomplete="off" value="<?php echo htmlspecialchars($arr_domain['web_domain_name'], ENT_QUOTES, 'UTF-8');?>" required>
+                </div>
+              </div>
+              <div class="form-group row">
+                <label class="col-md-3 col-form-label">Registrar link : </label>
+                <div class="col-md-7">
+                  <input type="text" class="form-control" name="registrar_link" id="registrar_link" placeholder="https://..." autocomplete="off" value="<?php echo htmlspecialchars(isset($arr_domain['registrar_link']) ? $arr_domain['registrar_link'] : '', ENT_QUOTES, 'UTF-8');?>">
+                </div>
+              </div>
+              <div class="form-group row">
+                <label class="col-md-3 col-form-label">SSL link : </label>
+                <div class="col-md-7">
+                  <input type="text" class="form-control" name="ssl_link" id="ssl_link" placeholder="https://..." autocomplete="off" value="<?php echo htmlspecialchars(isset($arr_domain['ssl_link']) ? $arr_domain['ssl_link'] : '', ENT_QUOTES, 'UTF-8');?>">
+                </div>
+              </div>
+              <div class="form-group row">
+                <label class="col-md-3 col-form-label">Expiration date : </label>
+                <div class="col-md-7">
+                  <input type="date" class="form-control" name="expire_date" id="expire_date" autocomplete="off" value="<?php echo htmlspecialchars(isset($arr_domain['expire_date']) ? $arr_domain['expire_date'] : '', ENT_QUOTES, 'UTF-8');?>">
                 </div>
               </div>
               <div class="form-group" >
                 <a href="<?php echo base_url();?>webs/domains/domains_list" id="addToTable" class="btn btn-outline btn-primary" >
                   <i class="icon wb-arrow-left" aria-hidden="true"></i> Back
                 </a>
-                <input type="hidden" name="id_en" id="id_en" value="<?php echo $arr_domain['web_domain_id']?>">
+                <input type="hidden" name="id_en" id="id_en" value="<?php echo htmlspecialchars($arr_domain['web_domain_id'], ENT_QUOTES, 'UTF-8');?>">
                 <button type="submit" class="btn btn-primary">Submit</button>
               </div>
             </form>

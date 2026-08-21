@@ -32,7 +32,9 @@ class Creditnote extends CI_Controller
 				'title' => "Accounting"
 			);
 
-		$arr_css = array();
+		$arr_css = array(
+			'daterangepicker' => base_url().'resources/css/daterangepicker/daterangepicker.css',
+		);
 
 		$arr_js = array(
 	      'creditnote_js' => base_url().'resources/js/account/creditnote.js',
@@ -40,7 +42,7 @@ class Creditnote extends CI_Controller
 
 	    $arr_search = array(
  			'taxinvoicetype' => "",
- 			'search_type' => "",
+ 			'search_type' => "1",
  			'platform' => "",
  			'ordernumber' => "",
  			'daterange' => ""
@@ -80,6 +82,7 @@ class Creditnote extends CI_Controller
 			     	$arr_orders=$this->order_util->getOrdersFromOdersOderItemsCN($orders_orderitems);
 
 			     	$orders = $this->order_util->make_cn_no($arr_orders);
+			     	$orders = $this->attach_document_signature_snapshots($orders, 'cn', 0);
 
 			     	$data=array(
 			     		'orders'=>$orders,
@@ -101,7 +104,12 @@ class Creditnote extends CI_Controller
 
 		      case 1: //shopee
 
-		      $orders_orderitems=$this->shopee_orders_model->shopee_select_order_with_orderitems_by_DateStart_DateEnd_SearchType_CN($StartDate,$EndDate,$search_type,$ordernumber);
+		      if ((string)$search_type === '1') {
+		      	$orders_orderitems=$this->shopee_orders_model->shopee_select_order_with_orderitems_by_cn_event_date($StartDate,$EndDate);
+		      } else {
+		      	$orders_orderitems=$this->shopee_orders_model->shopee_select_order_with_orderitems_by_DateStart_DateEnd_SearchType_CN($StartDate,$EndDate,$search_type,$ordernumber);
+		      	$orders_orderitems=$this->shopee_orders_model->stamp_cn_event_on_order_rows($orders_orderitems);
+		      }
 	     		//print_r($orders_orderitems);
 			     if(!empty($orders_orderitems))
 			     {
@@ -109,8 +117,9 @@ class Creditnote extends CI_Controller
 
 
 			     	$arr_orders=$this->order_util->getOrdersFromOdersOderItemsCNShopee($orders_orderitems);
-
+			     	usort($arr_orders, array($this, 'cmp_shopee_cn_doc_row'));
 			     	$orders = $this->order_util->make_cn_no_shopee($arr_orders);
+			     	$orders = $this->attach_document_signature_snapshots($orders, 'cn', 1);
 
 			     	$data=array(
 			     		'orders'=>$orders,
@@ -130,5 +139,38 @@ class Creditnote extends CI_Controller
 
 		      break;
 	       }
+	}
+
+	function attach_document_signature_snapshots($orders, $doc_type, $platform)
+	{
+		$this->load->model('web_authorize_signature_model');
+		if (empty($orders)) {
+			return $orders;
+		}
+		foreach ($orders as $i => $o) {
+			$doc_code = '';
+			if ($doc_type === 'cn' && !empty($o['cncode'])) {
+				$doc_code = $o['cncode'];
+			} elseif (!empty($o['taxinvoiceID'])) {
+				$doc_code = $o['taxinvoiceID'];
+			} elseif (!empty($o['cncode'])) {
+				$doc_code = $o['cncode'];
+			}
+			$ref = isset($o['order_number']) ? $o['order_number'] : '';
+			$orders[$i]['authorize_signature_url'] = $this->web_authorize_signature_model->snapshot_url($doc_type, $doc_code, $ref, $platform);
+		}
+		return $orders;
+	}
+
+	function cmp_shopee_cn_doc_row($a, $b)
+	{
+		$da = isset($a['updated_at']) ? (string)$a['updated_at'] : '';
+		$dbt = isset($b['updated_at']) ? (string)$b['updated_at'] : '';
+		if ($da === $dbt) {
+			$oa = isset($a['order_number']) ? (string)$a['order_number'] : '';
+			$ob = isset($b['order_number']) ? (string)$b['order_number'] : '';
+			return strcmp($oa, $ob);
+		}
+		return strcmp($da, $dbt);
 	}
 }

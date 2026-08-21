@@ -71,6 +71,7 @@ class Taxinvoice extends CI_Controller
 	public function taxinvoice_search()
 	{
 		$taxinvoicetype = $this->input->post('taxinvoicetype');
+		$voidtype = $this->input->post('voidtype');
 		$search_type = $this->input->post('search_type');
 		$platform = $this->input->post('platform');
 		$ordernumber = $this->input->post('order_number');
@@ -78,6 +79,7 @@ class Taxinvoice extends CI_Controller
 
 		$arr_search = array(
  			'taxinvoicetype' => $taxinvoicetype,
+			'voidtype' => $voidtype,
  			'platform' => $platform,
  			'search_type' => $search_type,
  			'ordernumber' => $ordernumber,
@@ -137,29 +139,39 @@ class Taxinvoice extends CI_Controller
 		 $platform=$this->uri->segment(4);
 	     $ordernumber=$this->uri->segment(5);
 	    
-	     $copy=$this->uri->segment(7);
+	     $copy=$this->uri->segment(8);
 	     $search_type = $this->uri->segment(6);
+		 $voidtype = 2;
+		 if($this->uri->segment(7) !== FALSE && $this->uri->segment(7) !== '' && is_numeric($this->uri->segment(7))){
+		 	$voidtype = (int)$this->uri->segment(7);
+		 }
+
+	     $is_tracking = 1;
+	     if($this->uri->segment(10) !== FALSE && $this->uri->segment(10) !== ''){
+		     $is_tracking = (int)$this->uri->segment(10);
+		 }
 	     $StartDate = "";
 	     $EndDate = "";
-	     if($this->uri->segment(8) != ""){
-		     $StartDate=$this->date_util->getStartEndDate($this->uri->segment(8),"S");
-		     $EndDate=$this->date_util->getStartEndDate($this->uri->segment(8),"E");
+	     if($this->uri->segment(9) != ""){
+		     $StartDate=$this->date_util->getStartEndDate($this->uri->segment(9),"S");
+		     $EndDate=$this->date_util->getStartEndDate($this->uri->segment(9),"E");
 		 }
 
 	     //echo $platform.">".$ordernumber.">".$StartDate.">".$EndDate.">".$copy.">".$search_type."<br>";
-
 	     //echo "select_orders_with_modify_total_Between_Start_End_Date '".$StartDate."'".$EndDate."'";
 
 	     switch($platform)
 	       {
 	         case 0: //lazada
 	         //echo "lazada";
-	     		$orders_orderitems=$this->lazada_orders_model->select_order_with_orderitems_by_DateStart_DateEnd_SearchType($StartDate,$EndDate,$search_type,$ordernumber);
+	     		$orders_orderitems=$this->lazada_orders_model->select_order_with_orderitems_by_DateStart_DateEnd_SearchType($StartDate,$EndDate,$search_type,$ordernumber,$voidtype);
 	     		//print_r($orders_orderitems);
 			     if(!empty($orders_orderitems))
 			     {
 
 			     	$orders=$this->order_util->getOrdersFromOdersOderItems($orders_orderitems);
+			     	$orders=$this->_attach_taxinvoice_signature_snapshots($orders);
+			     	$orders=$this->_keep_abb_orders($orders);
 			     	$data=array(
 			     		'orders'=>$orders,
 			     		'copy'=>$copy
@@ -180,12 +192,14 @@ class Taxinvoice extends CI_Controller
 
 		     case 1: //shopee-
 
-		     	$orders_orderitems=$this->shopee_orders_model->shopee_select_order_with_SearchType($StartDate,$EndDate,$search_type,$ordernumber);
+		     	$orders_orderitems=$this->shopee_orders_model->shopee_select_order_with_SearchType($StartDate,$EndDate,$search_type,$ordernumber,$voidtype);
 	     		//print_r($orders_orderitems);
 			     if(!empty($orders_orderitems))
 			     {
 
 			     	$orders=$this->order_util->ShopeegetOrdersFromOdersOderItems($orders_orderitems);
+			     	$orders=$this->_attach_taxinvoice_signature_snapshots($orders);
+			     	$orders=$this->_keep_abb_orders($orders);
 			     	$data=array(
 			     		'orders'=>$orders,
 			     		'copy'=>$copy
@@ -206,12 +220,14 @@ class Taxinvoice extends CI_Controller
 
 		     case 2: //tiktok
 
-		     	$orders_orderitems=$this->tiktok_orders_model->tiktok_select_order_with_SearchType($StartDate,$EndDate,$search_type,$ordernumber);
+		     	$orders_orderitems=$this->tiktok_orders_model->tiktok_select_order_with_SearchType($StartDate,$EndDate,$search_type,$ordernumber,$voidtype);
 	     		//print_r($orders_orderitems);
 			     if(!empty($orders_orderitems))
 			     {
 
 			     	$orders=$this->order_util->TiktokgetOrdersFromOdersOderItems($orders_orderitems);
+			     	$orders=$this->_attach_taxinvoice_signature_snapshots($orders);
+			     	$orders=$this->_keep_abb_orders($orders);
 			     	$data=array(
 			     		'orders'=>$orders,
 			     		'copy'=>$copy
@@ -225,19 +241,21 @@ class Taxinvoice extends CI_Controller
 			       );   
 
 			     }
-			    	//print_r($data);
+			    //print_r($data);
 			     $this->load->view('accounting/taxinvoice/tiktok_taxinvoicepages',$data);
 
 		     break;
 
 		     case 3: //Biggrill
 
-		     	$orders_orderitems=$this->inwshop_data_model->inwshop_select_order_with_SearchType($StartDate,$EndDate,$search_type,$ordernumber);
+		     	$orders_orderitems=$this->inwshop_data_model->inwshop_select_order_with_SearchType($StartDate,$EndDate,$search_type,$ordernumber,$voidtype);
 	     		//print_r($orders_orderitems);
 			     if(!empty($orders_orderitems))
 			     {
 
-			     	$orders=$this->order_util->TiktokgetOrdersFromOdersOderItems($orders_orderitems);
+			     	$orders=$this->order_util->BiggrillgetOrdersFromOdersOderItems($orders_orderitems);
+			     	$orders=$this->_attach_taxinvoice_signature_snapshots($orders);
+			     	$orders=$this->_keep_abb_orders($orders);
 			     	$data=array(
 			     		'orders'=>$orders,
 			     		'copy'=>$copy
@@ -332,6 +350,9 @@ class Taxinvoice extends CI_Controller
 				if($platform == 0){ // Lazada
 				//$arr_bnycode = $this->lazada_taxinvoice_model->select_bnycode($order_number);
 				$arr_order = $this->lazada_orders_model->get_by_sn_status_one($order_number,'packed');
+				if(!empty($arr_order) && $this->lazada_orders_model->is_untrusted_packed($order_number)){
+					$arr_order = array();
+				}
 				//print_r($arr_order);
 				if(!empty($arr_order)){
 
@@ -430,6 +451,9 @@ class Taxinvoice extends CI_Controller
 		$order_number=$this->uri->segment(4);
 
 		$arr_order = $this->lazada_orders_model->get_by_sn_status_one($order_number,'packed');
+		if(!empty($arr_order) && $this->lazada_orders_model->is_untrusted_packed($order_number)){
+			$arr_order = array();
+		}
 		$arr_taxinvoice = $this->lazada_taxinvoice_model->select_by_order_id(intval($order_number));
 
 		//print_r($arr_taxinvoice);
@@ -489,7 +513,8 @@ class Taxinvoice extends CI_Controller
 			'sum_amount_vat' => $sum_amount_vat,
 			'sum_before_vat' => $sum_before_vat,
 			'sum_before_vat_txt' => $sum_before_vat_txt,
-			'arr_items' => $arr_items
+			'arr_items' => $arr_items,
+			'authorize_signature_url' => $this->_document_signature_url('taxinvoice', isset($arr_taxinvoice['FullTaxinvoiceID']) ? $arr_taxinvoice['FullTaxinvoiceID'] : '', isset($arr_taxinvoice['order_sn']) ? $arr_taxinvoice['order_sn'] : '')
 		);
 
 		$this->load->view('accounting/taxinvoice/taxinvoice_print',$data);
@@ -564,11 +589,45 @@ class Taxinvoice extends CI_Controller
 			'sum_amount_vat' => $sum_amount_vat,
 			'sum_before_vat' => $sum_before_vat,
 			'sum_before_vat_txt' => $sum_before_vat_txt,
-			'arr_items' => $arr_items
+			'arr_items' => $arr_items,
+			'authorize_signature_url' => $this->_document_signature_url('taxinvoice', isset($arr_taxinvoice['FullTaxinvoiceID']) ? $arr_taxinvoice['FullTaxinvoiceID'] : '', $order_number)
 		);
 
 		$this->load->view('accounting/taxinvoice/shopee_taxinvoice_print',$data);
 	}
 
-	
+	function _document_signature_url($doc_type, $doc_code, $ref_number = '')
+	{
+		$this->load->model('web_authorize_signature_model');
+		return $this->web_authorize_signature_model->snapshot_url($doc_type, $doc_code, $ref_number);
+	}
+
+	function _keep_abb_orders($orders)
+	{
+		if (empty($orders) || !is_array($orders)) {
+			return 0;
+		}
+		$kept = array();
+		foreach ($orders as $row) {
+			if (!empty($row['taxinvoiceID'])) {
+				$kept[] = $row;
+			}
+		}
+		return !empty($kept) ? $kept : 0;
+	}
+
+	function _attach_taxinvoice_signature_snapshots($orders)
+	{
+		if (empty($orders)) {
+			return $orders;
+		}
+		$this->load->model('web_authorize_signature_model');
+		foreach ($orders as $i => $o) {
+			$doc_code = !empty($o['taxinvoiceID']) ? $o['taxinvoiceID'] : '';
+			$ref = isset($o['order_number']) ? $o['order_number'] : '';
+			$orders[$i]['authorize_signature_url'] = $this->web_authorize_signature_model->snapshot_url('taxinvoice', $doc_code, $ref);
+		}
+		return $orders;
+	}
+
 }

@@ -117,6 +117,7 @@ define('SALT_PASSWORD','l;ylfu;yoxu.s,jrk2238');
 define('API_TOKEN_KEY','ewrwerwer5wer8786adsadsdfht');
 define('API_TOKEN_KEY2','yeripusdflkw478wsgadsfgaeet');
 define('API_TOKEN_KEY3','ertepit5asdfu5646rtyyerwyiop');
+define('ADS_WEBHOOK_SECRET','bny_ads_wh_7c91e4a2f6b04d83');
 
 define('USER_GROUP_DEFULT_GROUP',3);
 define('USER_GROUP_USERTMP',2);
@@ -131,10 +132,25 @@ define('MENU_MANUFACTURE_BRAND',41);
 define('MENU_MANUFACTURE_SUPPLIER',42);	
 
 define('MENU_ACCOUNT_TAXINVOICE',34);	
+define('MENU_ACCOUNT_SALETAX_FOLDER',200);
 define('MENU_ACCOUNT_SALETAXREPORT',43);	
+define('MENU_ACCOUNT_SALETAX_PRINT',56);
+define('MENU_ACCOUNT_SALETAX_DELETE',203);
 define('MENU_ACCOUNT_CREDITNOTE',44);	
 define('MENU_ACCOUNT_CREDITREPORT',45);	
-define('MENU_ACCOUNT_TRACKINGREPORT',46);	
+define('MENU_ACCOUNT_TRACKINGREPORT',46);
+define('MENU_ACCOUNT_AUTHORIZE_SIGNATURE',204);
+define('MENU_WEBS_DOMAINS',10058);
+define('MENU_WEBS_PRODUCTS_CATEGORY',10064);
+define('MENU_WEBS_PRODUCTS',10072);
+define('MENU_WEBS_UNITS',10073);
+define('MENU_SALES',230);
+define('MENU_SALES_CHAT',231);
+define('MENU_SALES_PLAYBOOK',232);
+define('MENU_CONFIG_CHAT',233);
+define('MENU_ALERTS',240);
+define('MENU_ALERTS_TOKEN',241);
+define('MENU_ALERTS_STATUS',242);
 //----menu id-----
 
 define('GEN_CODE_KEY','epvm12l');
@@ -149,8 +165,8 @@ define('CAHCH_SEC',3600);
 
 //SMS API
 
-define('SMS_API_KEY','mGgA8ecmTrEwEw3BU548kNBzhfK_U_');
-define('SMS_SECRET_KEY','g3d0NyvfkOHVm2EmVwt5YtO2qjfXOd');
+define('SMS_API_KEY','eB8X8EL3c0sO29aq_6Ghd9noz51ATS');
+define('SMS_SECRET_KEY','uIMl9nc1ZpF_FUPq4TeCoFF06-tQcH');
 
 //Google key
 
@@ -169,6 +185,14 @@ define('CONTENT_PER_PAGE',10);
 define('GOOGLE_CAPTCHA_SITEKEY','6Ld30ZUpAAAAAOcOHhquWryugAWhhUggqn-enjl7');
 define('GOOGLE_CAPTCHA_SECRETKEY','6Ld30ZUpAAAAAB0c_U1wju23b5ail1SGo005Ursq'); 
 
+// Google Cloud Translation API (Basic v2) — paste API key from Google Cloud Console
+// Enable "Cloud Translation API" on the project, create an API key, restrict to Translation API.
+define('GOOGLE_TRANSLATE_API_KEY','AIzaSyCPis5pjWk5VAWOaAk4Gan0k4MHLvjnHIM');
+
 //Cookie
 define('COOKIE_PREFIX','cookie_bnyfood_');
 define('SESSION_PREFIX','session_bnyfood_');
+// Match API TOKEN_PERIOD_LIMIT (minutes) for login-token countdown
+define('TOKEN_PERIOD_LIMIT',180);
+// TEMP test: set >0 to force countdown/expiry (seconds). Set to 0 for normal.
+define('SESSION_COUNTDOWN_TEST_SEC', 0);

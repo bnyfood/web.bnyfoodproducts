@@ -297,18 +297,10 @@ function select_orders_with_modify_total_Between_Start_End_Date($StartDate,$EndD
 		//echo $sql; 
 		//sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-			{
-				return $query->result_array();
-			}
-		else
-			{
-				return NULL;
-			}	
+		return $this->apply_passed_pack_report_filter($query->result_array());
 
 
 	}
-
 
 	function select_latest_record()
 	{
@@ -462,22 +454,24 @@ $this->db->update('lazada_orders', $data);
 		return $query->row_array();
 	}
 
-	function shopee_select_order_with_SearchType($StartDate,$EndDate,$search_type,$ordernumber)
+	function shopee_select_order_with_SearchType($StartDate,$EndDate,$search_type,$ordernumber,$voidtype=2)
 	{
-		$sql="shopee_select_order_with_SearchType '".$StartDate."','".$EndDate."','".$search_type."','".$ordernumber."'";
+		$sql="shopee_select_order_with_SearchType '".$StartDate."','".$EndDate."','".$search_type."','".$ordernumber."',".$voidtype;
 		//echo $sql; 
 		//sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-			{
-				return $query->result_array();
-			}
-		else
-			{
-				return NULL;
-			}	
+		return $this->apply_passed_pack_report_filter($query->result_array());
 
 
+	}
+
+	function sql_shopee_taxinvoice_src($alias = 'tinv')
+	{
+		return "(
+	SELECT order_sn, taxinvoiceID
+	FROM Shopee_taxinvoiceid
+	WHERE ISNULL(taxinvoiceID,'') <> ''
+) ".$alias;
 	}
 
 	function shopee_select_order_with_DateStart_DateEnd($StartDate,$EndDate)
@@ -486,14 +480,7 @@ $this->db->update('lazada_orders', $data);
     $sql="shopee_select_order_with_DateStart_DateEnd '".$StartDate."','".$EndDate."'";
 	    //sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-		{
-			return $query->result_array();
-		}
-		else
-		{
-			return NULL;
-		}	
+		return $this->apply_passed_pack_report_filter($query->result_array());
 
 	}
 
@@ -541,14 +528,7 @@ $this->db->update('lazada_orders', $data);
 		//echo $sql; 
 		    //sqlsrv_configure("WarningsReturnAsErrors", 0);
 			$query = $this->db->query($sql);
-			if(!empty($query->result_array()))
-			{
-				return $query->result_array();
-			}
-			else
-			{
-				return NULL;
-			}	
+			return $query->result_array();	
 	}
 
 	function shopee_select_order_groupby_Date_by_DateStart_CN($StartDate)
@@ -558,14 +538,7 @@ $this->db->update('lazada_orders', $data);
 		//echo $sql; 
 		    //sqlsrv_configure("WarningsReturnAsErrors", 0);
 			$query = $this->db->query($sql);
-			if(!empty($query->result_array()))
-			{
-				return $query->result_array();
-			}
-			else
-			{
-				return NULL;
-			}	
+			return $query->result_array();	
 	}
 
 	function select_next_invoice($limit){
@@ -601,14 +574,7 @@ $this->db->update('lazada_orders', $data);
 		//echo $sql; 
 		//sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-			{
-				return $query->result_array();
-			}
-		else
-			{
-				return NULL;
-			}	
+		return $query->result_array();	
 
 
 	}
@@ -630,6 +596,233 @@ $this->db->update('lazada_orders', $data);
 
 	}
 
+	function get_after_pack_order_sn_set($order_sns){
+		$set = array();
+		if (empty($order_sns)) {
+			return $set;
+		}
+		$after = array(
+			'READY_TO_SHIP', 'PROCESSED', 'SHIPPED', 'TO_CONFIRM_RECEIVE',
+			'COMPLETED', 'TO_RETURN', 'RETURNED'
+		);
+		$this->db->select('order_sn, order_status');
+		$this->db->from('shopee_orders');
+		$this->db->where_in('order_sn', $order_sns);
+		$this->db->where_in('order_status', $after);
+		$query = $this->db->get();
+		$rows = $query->result_array();
+		if (!empty($rows)) {
+			foreach ($rows as $row) {
+				if (!empty($row['order_sn'])) {
+					$set[$row['order_sn']] = true;
+				}
+			}
+		}
+		return $set;
+	}
+
+	function get_by_sn($order_sn){
+		$this->db->select('*');
+		$this->db->from('shopee_orders');
+		$this->db->where('order_sn',$order_sn);
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	function get_tracking_order_sn_set($order_sns){
+		$found = array();
+		if (empty($order_sns)) {
+			return $found;
+		}
+		$chunks = array_chunk(array_values(array_unique($order_sns)), 500);
+		foreach ($chunks as $chunk) {
+			$this->db->distinct();
+			$this->db->select('order_sn');
+			$this->db->from('shopee_tracking');
+			$this->db->where_in('order_sn', $chunk);
+			$this->db->where('LEN(LTRIM(RTRIM(ISNULL(tracking_number, \'\')))) >', 0);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					$found[$row['order_sn']] = true;
+				}
+			}
+		}
+		return $found;
+	}
+
+	function get_passed_pack_order_sn_set($order_sns){
+		$found = array();
+		if (empty($order_sns)) {
+			return $found;
+		}
+		$after = array(
+			'PROCESSED', 'READY_TO_SHIP', 'RETRY_SHIP', 'SHIPPED', 'TO_CONFIRM_RECEIVE',
+			'COMPLETED', 'TO_RETURN', 'RETURNED'
+		);
+		$chunks = array_chunk(array_values(array_unique($order_sns)), 500);
+		foreach ($chunks as $chunk) {
+			$this->db->distinct();
+			$this->db->select('order_sn');
+			$this->db->from('shopee_orders');
+			$this->db->where_in('order_sn', $chunk);
+			$this->db->where_in('order_status', $after);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					$found[$row['order_sn']] = true;
+				}
+			}
+		}
+		$tracked = $this->get_tracking_order_sn_set($order_sns);
+		if (!empty($tracked)) {
+			foreach ($tracked as $sn => $val) {
+				$found[$sn] = true;
+			}
+		}
+		return $found;
+	}
+
+	function get_prepack_death_order_sn_set($order_sns){
+		$found = array();
+		if (empty($order_sns)) {
+			return $found;
+		}
+		$chunks = array_chunk(array_values(array_unique($order_sns)), 500);
+		foreach ($chunks as $chunk) {
+			$this->db->distinct();
+			$this->db->select('order_sn');
+			$this->db->from('shopee_orders');
+			$this->db->where_in('order_sn', $chunk);
+			$this->db->where_in('order_status', array('CANCELLED', 'UNPAID', 'INVOICE_PENDING'));
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					$found[$row['order_sn']] = true;
+				}
+			}
+		}
+		return $found;
+	}
+
+	// Path B: CANCELLED after sold (PROCESSED or tax invoice).
+	// Path A: COMPLETED + is_return (set only when return REFUND_PAID/COMPLETED).
+	function get_cn_eligible_order_sn_set($order_sns){
+		$found = array();
+		if (empty($order_sns)) {
+			return $found;
+		}
+		$chunks = array_chunk(array_values(array_unique($order_sns)), 500);
+		foreach ($chunks as $chunk) {
+			$this->db->distinct();
+			$this->db->select('b.order_sn');
+			$this->db->from('shopee_orders b');
+			$this->db->group_start();
+			$this->db->where('b.order_status', 'CANCELLED');
+			$this->db->or_group_start();
+			$this->db->where('b.order_status', 'COMPLETED');
+			$this->db->where('b.is_return', 1);
+			$this->db->group_end();
+			$this->db->group_end();
+			$this->db->group_start();
+			$this->db->where("EXISTS (SELECT 1 FROM shopee_orders p WHERE p.order_sn = b.order_sn AND p.order_status = 'PROCESSED')", null, false);
+			$this->db->or_where("EXISTS (SELECT 1 FROM Shopee_taxinvoiceid t WHERE t.order_sn = b.order_sn)", null, false);
+			$this->db->group_end();
+			$this->db->where_in('b.order_sn', $chunk);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					if (!empty($row['order_sn'])) {
+						$found[$row['order_sn']] = true;
+					}
+				}
+			}
+		}
+		return $found;
+	}
+
+	function _row_order_sn($row){
+		if (!empty($row['order_sn'])) {
+			return $row['order_sn'];
+		}
+		if (!empty($row['order_number'])) {
+			return $row['order_number'];
+		}
+		return '';
+	}
+
+	function filter_orders_not_passed_pack($arr_orders){
+		if (empty($arr_orders)) {
+			return $arr_orders;
+		}
+		$order_sns = array();
+		foreach ($arr_orders as $row) {
+			$sn = $this->_row_order_sn($row);
+			if ($sn !== '') {
+				$order_sns[] = $sn;
+			}
+		}
+		if (empty($order_sns)) {
+			return $arr_orders;
+		}
+		$passed = $this->get_passed_pack_order_sn_set($order_sns);
+		$death = $this->get_prepack_death_order_sn_set($order_sns);
+		$cn = $this->get_cn_eligible_order_sn_set($order_sns);
+		$kept = array();
+		foreach ($arr_orders as $row) {
+			$sn = $this->_row_order_sn($row);
+			if ($sn === '') {
+				$kept[] = $row;
+				continue;
+			}
+			if (isset($death[$sn]) && !isset($passed[$sn]) && !isset($cn[$sn])) {
+				continue;
+			}
+			$kept[] = $row;
+		}
+		return $kept;
+	}
+
+	function apply_passed_pack_report_filter($rows){
+		if (empty($rows)) {
+			return NULL;
+		}
+		$rows = $this->filter_orders_not_passed_pack($rows);
+		if (empty($rows)) {
+			return NULL;
+		}
+		return $rows;
+	}
+
+	// Any row in shopee_orders for these sns (escrow may still be missing).
+	function get_existing_order_sn_set($order_sns){
+		$set = array();
+		if (empty($order_sns)) {
+			return $set;
+		}
+		$order_sns = array_values(array_unique($order_sns));
+		$chunks = array_chunk($order_sns, 800);
+		foreach ($chunks as $chunk) {
+			$this->db->select('order_sn');
+			$this->db->from('shopee_orders');
+			$this->db->where_in('order_sn', $chunk);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					if (!empty($row['order_sn'])) {
+						$set[$row['order_sn']] = true;
+					}
+				}
+			}
+		}
+		return $set;
+	}
+
 	function select_status_by_sn($arr_order_sn){
 		$this->db->select('order_sn,order_status');
 		$this->db->from('shopee_orders');
@@ -643,14 +836,7 @@ $this->db->update('lazada_orders', $data);
 		$sql="shopee_select_order_with_OrdernoStart_OrderEnd '".$order_start."','".$order_end."'";
 	    //sqlsrv_configure("WarningsReturnAsErrors", 0);
 		$query = $this->db->query($sql);
-		if(!empty($query->result_array()))
-		{
-			return $query->result_array();
-		}
-		else
-		{
-			return NULL;
-		}	
+		return $this->apply_passed_pack_report_filter($query->result_array());	
 	}
 
 	function select_chk_date()
@@ -763,6 +949,419 @@ $this->db->update('lazada_orders', $data);
 		$query = $this->db->get();
 		return $query->result_array();
 		
+	}
+
+	// Check goods = original_cost_of_goods_sold (≈ Excel ราคาขายสุทธิ).
+	// Tax report / CN goods = original_price (ราคาก่อนป้ายเหลือง).
+	// One order_sn can have several status rows; cancelled escrow often zeros
+	// original_price / seller_discount — keep the row with the highest original_price.
+	function get_escrow_tax_map_by_order_sns($order_sns){
+		$map = array();
+		if (empty($order_sns)) {
+			return $map;
+		}
+		$order_sns = array_values(array_unique($order_sns));
+		$chunks = array_chunk($order_sns, 800);
+		foreach ($chunks as $chunk) {
+			$this->db->select("shopee_orders.order_sn,
+				shopee_orders.order_status,
+				shopee_escrow_detail.EscrowID,
+				shopee_escrow_order_income.original_price,
+				shopee_escrow_order_income.original_cost_of_goods_sold,
+				shopee_escrow_order_income.seller_discount,
+				shopee_escrow_order_income.voucher_from_seller,
+				shopee_escrow_order_income.voucher_from_shopee,
+				shopee_escrow_order_income.coins,
+				shopee_escrow_order_income.shopee_discount,
+				shopee_escrow_order_income.buyer_total_amount,
+				shopee_escrow_order_income.buyer_paid_shipping_fee,
+				shopee_escrow_order_income.cost_of_goods_sold,
+				ISNULL(shopee_escrow_order_income.original_cost_of_goods_sold,0) as check_taxable", false);
+			$this->db->from('shopee_orders');
+			$this->db->join('shopee_escrow_detail', 'shopee_orders.OrderID = shopee_escrow_detail.OrderID');
+			$this->db->join('shopee_escrow_order_income', 'shopee_escrow_detail.EscrowID = shopee_escrow_order_income.EscrowID');
+			$this->db->where_in('shopee_orders.order_sn', $chunk);
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					$sn = $row['order_sn'];
+					if ($sn === '') {
+						continue;
+					}
+					if (!isset($map[$sn]) || $this->_escrow_cn_row_score($row) > $this->_escrow_cn_row_score($map[$sn])) {
+						$map[$sn] = $row;
+					}
+				}
+			}
+		}
+		return $map;
+	}
+
+	function _escrow_cn_row_score($row)
+	{
+		$orig = isset($row['original_price']) ? floatval($row['original_price']) : 0;
+		$cogs = isset($row['original_cost_of_goods_sold']) ? floatval($row['original_cost_of_goods_sold']) : 0;
+		$ship = isset($row['buyer_paid_shipping_fee']) ? floatval($row['buyer_paid_shipping_fee']) : 0;
+		$status = isset($row['order_status']) ? strtoupper(trim((string)$row['order_status'])) : '';
+		$rank = 5;
+		if ($status === 'SHIPPED') {
+			$rank = 50;
+		} elseif ($status === 'PROCESSED') {
+			$rank = 40;
+		} elseif (in_array($status, array('READY_TO_SHIP', 'RETRY_SHIP', 'TO_CONFIRM_RECEIVE', 'COMPLETED'), true)) {
+			$rank = 30;
+		} elseif (in_array($status, array('TO_RETURN', 'RETURNED'), true)) {
+			$rank = 10;
+		} elseif (in_array($status, array('CANCELLED', 'IN_CANCEL'), true)) {
+			$rank = 0;
+		}
+		$goods = ($orig > $cogs) ? $orig : $cogs;
+		if ($goods > 0.00001) {
+			return 1000000000.0 + ($orig * 1000000.0) + ($cogs * 1000.0) + $rank;
+		}
+		return ($rank * 1000.0) + $ship;
+	}
+
+	function get_orderitem_original_map_by_order_sns($order_sns)
+	{
+		$map = array();
+		if (empty($order_sns)) {
+			return $map;
+		}
+		$order_sns = array_values(array_unique($order_sns));
+		$chunks = array_chunk($order_sns, 800);
+		foreach ($chunks as $chunk) {
+			$this->db->select("order_sn, SUM(ISNULL(model_original_price,0) * ISNULL(model_quantity_purchased,1)) AS goods", false);
+			$this->db->from('shopee_orderitems');
+			$this->db->where_in('order_sn', $chunk);
+			$this->db->group_by('order_sn');
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					if (!empty($row['order_sn'])) {
+						$map[$row['order_sn']] = floatval($row['goods']);
+					}
+				}
+			}
+		}
+		return $map;
+	}
+
+	function get_escrow_item_original_map_by_escrow_ids($escrow_ids)
+	{
+		$map = array();
+		if (empty($escrow_ids)) {
+			return $map;
+		}
+		$escrow_ids = array_values(array_unique($escrow_ids));
+		$chunks = array_chunk($escrow_ids, 800);
+		foreach ($chunks as $chunk) {
+			$this->db->select("EscrowID, SUM(ISNULL(original_price,0)) AS goods", false);
+			$this->db->from('shopee_escrow_items');
+			$this->db->where_in('EscrowID', $chunk);
+			$this->db->group_by('EscrowID');
+			$query = $this->db->get();
+			$rows = $query->result_array();
+			if (!empty($rows)) {
+				foreach ($rows as $row) {
+					if (isset($row['EscrowID']) && $row['EscrowID'] !== '' && $row['EscrowID'] !== null) {
+						$map[$row['EscrowID']] = floatval($row['goods']);
+					}
+				}
+			}
+		}
+		return $map;
+	}
+
+	function _fmt_sqlsrv_time($value)
+	{
+		if ($value instanceof DateTime) {
+			return $value->format('Y-m-d H:i:s');
+		}
+		$text = trim((string)$value);
+		if ($text === '') {
+			return $text;
+		}
+		$ts = strtotime($text);
+		return $ts ? date('Y-m-d H:i:s', $ts) : $text;
+	}
+
+	function _ymd_param($value)
+	{
+		$ts = strtotime((string)$value);
+		return $ts ? date('Y-m-d', $ts) : (string)$value;
+	}
+
+	/**
+	 * CN issue stamp:
+	 * Path B = first CANCELLED.update_time
+	 * Path A = first shopee_return_order.end_time at REFUND_PAID/COMPLETED
+	 * Requires sold: PROCESSED or tax invoice. CN ⊂ sales report (tax invoice join).
+	 */
+	function get_first_cn_event_map($StartDate, $EndDate)
+	{
+		$start = $this->db->escape($this->_ymd_param($StartDate));
+		$end = $this->db->escape($this->_ymd_param($EndDate));
+		$sql = "
+SELECT x.order_sn, x.cn_event_at
+FROM (
+	SELECT order_sn, MIN(cn_event_at) AS cn_event_at
+	FROM (
+		SELECT order_sn, update_time AS cn_event_at
+		FROM shopee_orders
+		WHERE order_status = 'CANCELLED'
+		UNION ALL
+		SELECT order_sn, end_time AS cn_event_at
+		FROM shopee_return_order
+		WHERE UPPER(status) IN ('REFUND_PAID', 'COMPLETED')
+			AND end_time IS NOT NULL
+	) e
+	GROUP BY order_sn
+) x
+INNER JOIN ".$this->sql_shopee_taxinvoice_src('t')." ON t.order_sn = x.order_sn
+WHERE CONVERT(date, x.cn_event_at) >= ".$start."
+	AND CONVERT(date, x.cn_event_at) <= ".$end."
+	AND (
+		EXISTS (
+			SELECT 1 FROM shopee_orders p
+			WHERE p.order_sn = x.order_sn
+			AND p.order_status = 'PROCESSED'
+		)
+		OR EXISTS (
+			SELECT 1 FROM Shopee_taxinvoiceid inv
+			WHERE inv.order_sn = x.order_sn
+		)
+	)
+ORDER BY x.cn_event_at, x.order_sn
+";
+		$query = $this->db->query($sql);
+		$map = array();
+		if (!empty($query)) {
+			foreach ($query->result_array() as $row) {
+				if (!empty($row['order_sn'])) {
+					$map[$row['order_sn']] = $this->_fmt_sqlsrv_time($row['cn_event_at']);
+				}
+			}
+		}
+		return $map;
+	}
+
+	function get_first_cn_event_for_sns($order_sns)
+	{
+		$map = array();
+		if (empty($order_sns)) {
+			return $map;
+		}
+		$in = array();
+		foreach (array_unique($order_sns) as $sn) {
+			$sn = trim((string)$sn);
+			if ($sn === '') {
+				continue;
+			}
+			$in[] = $this->db->escape($sn);
+		}
+		if (empty($in)) {
+			return $map;
+		}
+		$sql = "
+SELECT order_sn, MIN(cn_event_at) AS cn_event_at
+FROM (
+	SELECT order_sn, update_time AS cn_event_at
+	FROM shopee_orders
+	WHERE order_sn IN (".implode(',', $in).")
+		AND order_status = 'CANCELLED'
+	UNION ALL
+	SELECT order_sn, end_time AS cn_event_at
+	FROM shopee_return_order
+	WHERE order_sn IN (".implode(',', $in).")
+		AND UPPER(status) IN ('REFUND_PAID', 'COMPLETED')
+		AND end_time IS NOT NULL
+) e
+GROUP BY order_sn
+";
+		$query = $this->db->query($sql);
+		if (!empty($query)) {
+			foreach ($query->result_array() as $row) {
+				if (!empty($row['order_sn'])) {
+					$map[$row['order_sn']] = $this->_fmt_sqlsrv_time($row['cn_event_at']);
+				}
+			}
+		}
+		return $map;
+	}
+
+	function stamp_cn_event_on_order_rows($rows)
+	{
+		if (empty($rows)) {
+			return $rows;
+		}
+		$sns = array();
+		foreach ($rows as $row) {
+			$sn = '';
+			if (!empty($row['order_sn'])) {
+				$sn = $row['order_sn'];
+			} elseif (!empty($row['order_number'])) {
+				$sn = $row['order_number'];
+			}
+			if ($sn !== '') {
+				$sns[] = $sn;
+			}
+		}
+		$map = $this->get_first_cn_event_for_sns($sns);
+		if (empty($map)) {
+			return $rows;
+		}
+		foreach ($rows as $i => $row) {
+			$sn = '';
+			if (!empty($row['order_sn'])) {
+				$sn = $row['order_sn'];
+			} elseif (!empty($row['order_number'])) {
+				$sn = $row['order_number'];
+			}
+			if ($sn !== '' && !empty($map[$sn])) {
+				$rows[$i]['cn_event_at'] = $map[$sn];
+				$rows[$i]['updated_at'] = $map[$sn];
+			}
+		}
+		return $rows;
+	}
+
+	function _sns_in_sql($order_sns)
+	{
+		$in = array();
+		foreach (array_unique($order_sns) as $sn) {
+			$sn = trim((string)$sn);
+			if ($sn === '') {
+				continue;
+			}
+			$in[] = $this->db->escape($sn);
+		}
+		return $in;
+	}
+
+	function select_cn_order_items_by_sns($order_sns)
+	{
+		$in = $this->_sns_in_sql($order_sns);
+		if (empty($in)) {
+			return array();
+		}
+		$rows = $this->_select_cn_order_items_by_sns_statuses($in, array('SHIPPED'));
+		$got = array();
+		if (!empty($rows)) {
+			foreach ($rows as $row) {
+				if (!empty($row['order_number'])) {
+					$got[$row['order_number']] = true;
+				}
+			}
+		}
+		$missing = array();
+		foreach ($order_sns as $sn) {
+			$sn = trim((string)$sn);
+			if ($sn !== '' && empty($got[$sn])) {
+				$missing[] = $sn;
+			}
+		}
+		if (!empty($missing)) {
+			$in2 = $this->_sns_in_sql($missing);
+			$rows2 = $this->_select_cn_order_items_by_sns_statuses($in2, array('PROCESSED', 'READY_TO_SHIP', 'RETRY_SHIP'));
+			if (!empty($rows2)) {
+				$rows = array_merge($rows, $rows2);
+			}
+		}
+		return $rows;
+	}
+
+	function _select_cn_order_items_by_sns_statuses($in_escaped, $statuses)
+	{
+		if (empty($in_escaped) || empty($statuses)) {
+			return array();
+		}
+		$st = array();
+		$ord = array();
+		$rank = 1;
+		foreach ($statuses as $status) {
+			$st[] = $this->db->escape($status);
+			$ord[] = "WHEN ".$this->db->escape($status)." THEN ".$rank;
+			$rank++;
+		}
+		$sql = "
+SELECT
+	v.order_sn AS order_number,
+	tinv.taxinvoiceID,
+	v.create_time AS created_at,
+	v.update_time AS updated_at,
+	shopee_escrow_order_income.buyer_paid_shipping_fee AS shipping_fee,
+	shopee_escrow_order_income.voucher_from_shopee AS voucher_platform,
+	shopee_escrow_order_income.voucher_from_seller AS voucher_seller,
+	shopee_escrow_order_income.original_price
+		- shopee_escrow_order_income.seller_discount
+		- shopee_escrow_order_income.shopee_discount AS price,
+	v.order_status,
+	shopee_taxinvoice.FullTaxinvoiceID AS FullTaxinvoiceID,
+	ISNULL(shopee_taxinvoice.TaxNo, '-') AS TaxNo,
+	ISNULL(shopee_taxinvoice.name, '-') AS customer_name,
+	ISNULL(shopee_taxinvoice.phone, '-') AS customer_phone,
+	ISNULL(shopee_taxinvoice.zip, '-') AS customer_zip,
+	ISNULL(address1, '-') AS address1,
+	ISNULL(address2, '-') AS address2,
+	shopee_orderitems.OrderItemID,
+	shopee_orderitems.item_sku AS sku,
+	lazada_skumap.ProductName,
+	shopee_orderitems.item_name AS name,
+	shopee_orderitems.model_discounted_price AS paid_price
+FROM shopee_orders_cn_view v
+INNER JOIN shopee_orderitems ON v.order_sn = shopee_orderitems.order_sn
+INNER JOIN lazada_skumap ON shopee_orderitems.item_sku = lazada_skumap.sku
+LEFT OUTER JOIN shopee_taxinvoice ON v.order_sn = shopee_taxinvoice.shopee_orders_OrderID
+INNER JOIN shopee_escrow_detail ON v.OrderID = shopee_escrow_detail.OrderID
+INNER JOIN shopee_escrow_order_income ON shopee_escrow_detail.EscrowID = shopee_escrow_order_income.EscrowID
+INNER JOIN ".$this->sql_shopee_taxinvoice_src('tinv')." ON v.order_sn = tinv.order_sn
+WHERE v.order_sn IN (".implode(',', $in_escaped).")
+	AND v.OrderID IN (
+		SELECT x.OrderID FROM (
+			SELECT v2.order_sn, v2.OrderID,
+				ROW_NUMBER() OVER (
+					PARTITION BY v2.order_sn
+					ORDER BY CASE v2.order_status
+						".implode(' ', $ord)."
+						ELSE 99
+					END, v2.update_time
+				) AS rn
+			FROM shopee_orders_cn_view v2
+			WHERE v2.order_sn IN (".implode(',', $in_escaped).")
+				AND v2.order_status IN (".implode(',', $st).")
+		) x
+		WHERE x.rn = 1
+	)
+ORDER BY v.order_sn, shopee_orderitems.OrderItemID
+";
+		$query = $this->db->query($sql);
+		if (empty($query)) {
+			return array();
+		}
+		return $query->result_array();
+	}
+
+	function shopee_select_order_with_orderitems_by_cn_event_date($StartDate, $EndDate)
+	{
+		$map = $this->get_first_cn_event_map($StartDate, $EndDate);
+		if (empty($map)) {
+			return array();
+		}
+		$rows = $this->select_cn_order_items_by_sns(array_keys($map));
+		if (empty($rows)) {
+			return array();
+		}
+		foreach ($rows as $i => $row) {
+			$sn = isset($row['order_number']) ? $row['order_number'] : '';
+			if ($sn !== '' && !empty($map[$sn])) {
+				$rows[$i]['cn_event_at'] = $map[$sn];
+				$rows[$i]['updated_at'] = $map[$sn];
+			}
+		}
+		return $rows;
 	}
 
 	

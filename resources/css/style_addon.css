@@ -1,6 +1,4 @@
-.help-block,
-label.error,
-span.error {
+.help-block{
 	color: #ff0000 !important;
 }
 
@@ -43,3 +41,239 @@ span.error {
 
 
 mark {background: #ffd600!important}
+
+/* Classic pill on/off toggle (HTML switch button style) */
+.bny-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+  vertical-align: middle;
+  margin: 0;
+  cursor: pointer;
+}
+.bny-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.bny-switch-slider {
+  position: absolute;
+  inset: 0;
+  background: #c5c5c5;
+  border-radius: 28px;
+  transition: background 0.2s ease;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.12);
+}
+.bny-switch-slider:before {
+  content: "";
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.bny-switch-slider:after {
+  content: "OFF";
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  line-height: 1;
+}
+.bny-switch input:checked + .bny-switch-slider {
+  background: #4caf50;
+}
+.bny-switch input:checked + .bny-switch-slider:before {
+  transform: translateX(24px);
+}
+.bny-switch input:checked + .bny-switch-slider:after {
+  content: "ON";
+  left: 8px;
+  right: auto;
+}
+.bny-switch input:focus + .bny-switch-slider {
+  outline: 2px solid rgba(76, 175, 80, 0.35);
+  outline-offset: 2px;
+}
+.cat-display-cell {
+  vertical-align: middle !important;
+}
+
+/* Clean step switch: rail overlays options grid (thumb must NOT be a grid child) */
+.bny-step-switch {
+  position: relative;
+  display: inline-block;
+  width: 240px;
+  max-width: 100%;
+  vertical-align: middle;
+  touch-action: none;
+  user-select: none;
+  box-sizing: border-box;
+  padding: 0 2px 2px;
+}
+.bny-step-switch-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 28px;
+  z-index: 2;
+  pointer-events: none;
+}
+.bny-step-switch-track {
+  position: absolute;
+  left: 12.5%;
+  right: 12.5%;
+  top: 12px;
+  height: 3px;
+  background: #d0d5dd;
+  border-radius: 2px;
+}
+.bny-step-thumb {
+  position: absolute;
+  top: 4px;
+  left: 12.5%;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #1a73e8;
+  box-shadow: 0 0 0 3px #fff, 0 1px 4px rgba(26, 115, 232, 0.35);
+  cursor: grab;
+  transform: translateX(-50%);
+  transition: left 0.15s ease;
+  outline: none;
+  pointer-events: auto;
+  z-index: 3;
+}
+.bny-step-switch.is-dragging .bny-step-thumb {
+  cursor: grabbing;
+  transition: none;
+}
+.bny-step-switch-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  position: relative;
+  z-index: 1;
+}
+.bny-step-switch-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: center;
+}
+.bny-step-switch-opt input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  clip: rect(0, 0, 0, 0);
+  overflow: hidden;
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: none;
+  border: 0;
+}
+.bny-step-dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  margin-top: 9px;
+  border-radius: 50%;
+  background: #c5cad3;
+  box-shadow: 0 0 0 3px #fff;
+}
+.bny-step-label {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: #8a9199;
+  white-space: nowrap;
+}
+.bny-step-switch-opt:hover .bny-step-label {
+  color: #555;
+}
+.bny-step-switch-opt.is-active .bny-step-label,
+.bny-step-switch-opt input[type="radio"]:checked ~ .bny-step-label {
+  color: #1a73e8;
+}
+.bny-step-switch-opt.is-active .bny-step-dot,
+.bny-step-switch-opt input[type="radio"]:checked + .bny-step-dot {
+  visibility: hidden;
+}
+
+.dashboard-nav {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.dashboard-nav::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.dashboard-nav-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.dashboard-nav-list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.nav-scroll-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  color: #fff;
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.nav-scroll-hint.is-on {
+  opacity: 1;
+  visibility: visible;
+}
+.nav-scroll-hint-up {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(180, 28, 28, 0.95), rgba(225, 60, 60, 0));
+}
+.nav-scroll-hint-down {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(180, 28, 28, 0.95), rgba(225, 60, 60, 0));
+}
+.chat-unreplied-badge {
+  font-weight: 600;
+  color: #ffe08a;
+}

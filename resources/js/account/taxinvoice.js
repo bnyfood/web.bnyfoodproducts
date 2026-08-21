@@ -34,24 +34,24 @@ function set_search(sel){
   //alert(sel.value);
   if(sel.value == '1'){
 
-    document.getElementById("date_search").style.display = "table-cell";
+    document.getElementById("date_search").style.display = "";
     document.getElementById("order_search").style.display = "none";
-    document.getElementById("button_search1").style.display = "flex";
-    document.getElementById("button_search2").style.display = "flex";
+    document.getElementById("button_search1").style.display = "";
+    document.getElementById("button_search2").style.display = "";
 
   }else if(sel.value == '2'){
 
     document.getElementById("date_search").style.display = "none";
-    document.getElementById("order_search").style.display = "table-cell";
-    document.getElementById("button_search1").style.display = "flex";
-    document.getElementById("button_search2").style.display = "flex";
+    document.getElementById("order_search").style.display = "";
+    document.getElementById("button_search1").style.display = "";
+    document.getElementById("button_search2").style.display = "";
 
   }else if(sel.value == '3'){
     
-    document.getElementById("date_search").style.display = "table-cell";
-    document.getElementById("order_search").style.display = "table-cell";
-    document.getElementById("button_search1").style.display = "flex";
-    document.getElementById("button_search2").style.display = "flex";
+    document.getElementById("date_search").style.display = "";
+    document.getElementById("order_search").style.display = "";
+    document.getElementById("button_search1").style.display = "";
+    document.getElementById("button_search2").style.display = "";
 
   }else{
 
@@ -174,6 +174,9 @@ $('#searchcopy').click(function(){
 
 
 $('#search').click(function(){
+  if (this.getAttribute("data-bny-doc-search")) {
+    return;
+  }
    var w=1200;
    var h=800;
    var left = (screen.width/2)-(w/2);
@@ -181,6 +184,8 @@ $('#search').click(function(){
   var search_type=$("select#search_type").val();
   var platform=$("select#platform").val();
   var ordernumber=$("#ordernumber").val();
+  var voidtype=$("input[name='voidtype']:checked").val();
+
   if(ordernumber=="")
   {
    ordernumber="none"; 
@@ -196,7 +201,7 @@ $('#search').click(function(){
     daterange = daterange.replace("-", "hp");
   
 
-  var urls = hostname_site+"accounting/taxinvoice/shot_invoice/"+platform+"/"+ordernumber+"/"+search_type+"/original/"+daterange;
+  var urls = hostname_site+"accounting/taxinvoice/shot_invoice/"+platform+"/"+ordernumber+"/"+search_type+"/"+voidtype+"/original/"+daterange;
   //alert(urls);
   return window.open(urls, '', 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left);
   

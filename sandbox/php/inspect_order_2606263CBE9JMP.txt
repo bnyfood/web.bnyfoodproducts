@@ -1,0 +1,31 @@
+﻿
+
+===== orders (2) =====
+OrderID | order_sn | order_status | is_return | create_time | update_time | taxinvoiceID_on_order
+2999307	2606263CBE9JMP	COMPLETED	1	2026-06-26 02:52:29	2026-07-06 23:55:47	
+2999308	2606263CBE9JMP	PROCESSED	1	2026-06-26 02:52:29	2026-06-26 02:52:29	
+
+===== return_order (1) =====
+shopee_return_order_id | return_sn | order_sn | status | is_active
+65	2607010GPRNQ6B7	2606263CBE9JMP	ACCEPTED	1
+
+===== taxinvoiceid (1) =====
+taxinvoiceID | order_sn
+Shp20260601541	2606263CBE9JMP
+
+===== cn_view (1) =====
+order_sn | latest_status | is_return | invoice_date
+2606263CBE9JMP	COMPLETED	1	2026-06-26 02:52:29
+
+===== escrow (2) =====
+EscrowID | original_price | seller_discount | escrow_amount
+2986910	0	0	-108
+2986911	0	0	-108
+
+===== cn_eligible (1) =====
+cn_eligible
+1
+
+===== cn_group_sample (1) =====
+transactiondate | order_sn | latest_status | is_return | ValueBeforeVAT
+2026-06-26	2606263CBE9JMP	COMPLETED	1	0

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>บิ๊กกริลล์ | ซอสหมาล่า ผงพริกหมาล่า</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #e31e24;
+      --red-dark: #c4191f;
+      --black: #1a1a1a;
+      --gray: #888;
+      --gray-light: #e8e8e8;
+      --white: #fff;
+      --sauce: #6b1a1a;
+      --sauce-mid: #8b2020;
+      --powder: #d4622a;
+      --powder-light: #e88a4a;
+    }
+
+    body {
+      font-family: 'Noto Sans Thai', sans-serif;
+      background: var(--white);
+      color: var(--black);
+      line-height: 1.5;
+    }
+
+    /* ── Top bar ── */
+    .top-bar {
+      background: var(--red);
+      color: var(--white);
+      text-align: center;
+      font-size: 13px;
+      padding: 6px 16px;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--gray-light);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--black);
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--red);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .logo-text span {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--gray);
+      letter-spacing: 1px;
+    }
+
+    nav {
+      display: flex;
+      gap: 28px;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: var(--black);
+      font-size: 14px;
+      font-weight: 500;
+      transition: color .2s;
+    }
+
+    nav a:hover { color: var(--red); }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-actions button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: var(--black);
+      position: relative;
+    }
+
+    .cart-badge {
+      position: absolute;
+      top: -4px;
+      right: -6px;
+      background: var(--red);
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 700;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Hero banner ── */
+    .hero {
+      background: linear-gradient(135deg, #1a0505 0%, #4a0e0e 50%, #7a1818 100%);
+      color: var(--white);
+      text-align: center;
+      padding: 48px 24px 56px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 70% 50%, rgba(227,30,36,.25) 0%, transparent 60%);
+    }
+
+    .hero-content { position: relative; max-width: 640px; margin: 0 auto; }
+
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .hero p {
+      font-size: 16px;
+      opacity: .85;
+      margin-bottom: 24px;
+    }
+
+    .hero-cta {
+      display: inline-block;
+      background: var(--red);
+      color: var(--white);
+      padding: 12px 32px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      transition: background .2s;
+    }
+
+    .hero-cta:hover { background: var(--red-dark); }
+
+    /* ── Section title ── */
+    .section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 36px;
+      position: relative;
+      padding-bottom: 12px;
+    }
+
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 48px;
+      height: 3px;
+      background: var(--red);
+      border-radius: 2px;
+    }
+
+    /* ── Product grid ── */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 1100px) {
+      .product-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+      .product-grid { grid-template-columns: repeat(3, 1fr); }
+      nav { display: none; }
+    }
+
+    @media (max-width: 520px) {
+      .product-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Product card ── */
+    .product-card {
+      border: 1px solid var(--gray-light);
+      border-radius: 4px;
+      overflow: hidden;
+      transition: box-shadow .2s, transform .2s;
+      cursor: pointer;
+      background: var(--white);
+    }
+
+    .product-card:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,.1);
+      transform: translateY(-2px);
+    }
+
+    .product-image-wrap {
+      position: relative;
+      aspect-ratio: 1;
+      background: #f5f5f5;
+      overflow: hidden;
+    }
+
+    /* CSS product bag illustration */
+    .product-bag {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .bag {
+      width: 58%;
+      height: 72%;
+      border-radius: 4px 4px 8px 8px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 2px 4px 12px rgba(0,0,0,.15);
+    }
+
+    .bag.sauce {
+      background: linear-gradient(160deg, #9b2828 0%, var(--sauce) 40%, #4a0e0e 100%);
+    }
+
+    .bag.powder {
+      background: linear-gradient(160deg, var(--powder-light) 0%, var(--powder) 50%, #a04010 100%);
+    }
+
+    .bag-label {
+      background: rgba(255,255,255,.92);
+      border-radius: 3px;
+      padding: 6px 8px;
+      text-align: center;
+      width: 80%;
+    }
+
+    .bag-label .brand {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--red);
+      letter-spacing: .5px;
+    }
+
+    .bag-label .type {
+      font-size: 7px;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    .bag-label .vol {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--black);
+      margin-top: 3px;
+    }
+
+    .bag-seal {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30%;
+      height: 8%;
+      background: rgba(255,255,255,.3);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* Bulk banner */
+    .bulk-banner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: var(--red);
+      color: var(--white);
+      font-size: 9px;
+      font-weight: 600;
+      text-align: center;
+      padding: 5px 4px;
+      line-height: 1.3;
+      z-index: 2;
+    }
+
+    .bulk-qty {
+      position: absolute;
+      right: 8%;
+      bottom: 12%;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 900;
+      color: var(--red);
+      font-style: italic;
+      line-height: 1;
+      text-shadow: 1px 1px 0 rgba(255,255,255,.8);
+      z-index: 2;
+    }
+
+    .product-info {
+      padding: 10px 12px 14px;
+    }
+
+    .product-code {
+      font-size: 11px;
+      color: var(--gray);
+      margin-bottom: 4px;
+    }
+
+    .product-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--black);
+      line-height: 1.45;
+      min-height: 56px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .product-price {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .price-current {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--black);
+    }
+
+    .price-original {
+      font-size: 13px;
+      color: var(--red);
+      text-decoration: line-through;
+    }
+
+    .discount-tag {
+      display: inline-block;
+      background: #fff0f0;
+      color: var(--red);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-top: 4px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      background: #111;
+      color: #aaa;
+      text-align: center;
+      padding: 32px 24px;
+      font-size: 13px;
+    }
+
+    footer strong { color: var(--white); }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">🚚 จัดส่งฟรี เมื่อสั่งซื้อครบ ฿1,500 | สินค้าคุณภาพ จาก บิ๊กกริลล์</div>
+
+  <header>
+    <a href="#" class="logo">
+      <div class="logo-icon">🔥</div>
+      <div class="logo-text">
+        บิ๊กกริลล์
+        <span>BIG GRILL MALA</span>
+      </div>
+    </a>
+    <nav>
+      <a href="#">หน้าแรก</a>
+      <a href="#">ซอสหมาล่า</a>
+      <a href="#">ผงพริกหมาล่า</a>
+      <a href="#">แพ็คพิเศษ</a>
+      <a href="#">ติดต่อเรา</a>
+    </nav>
+    <div class="header-actions">
+      <button title="ค้นหา">🔍</button>
+      <button title="ตะกร้าสินค้า">
+        🛒
+        <span class="cart-badge">0</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <h1>ซอสหมาล่า บิ๊กกริลล์</h1>
+      <p>รสชาติเข้มข้น หอมเครื่องเทศ ทำง่าย กำไรดี เหมาะสำหรับร้านขายไม้ปิ้งย่าง หมาล่า และชาบู</p>
+      <a href="#products" class="hero-cta">ดูสินค้าทั้งหมด</a>
+    </div>
+  </section>
+
+  <section class="section" id="products">
+    <h2 class="section-title">สินค้าขายดี</h2>
+
+    <div class="product-grid">
+
+      <!-- S2000 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="product-bag">
+            <div class="bag sauce">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ซอสหมาล่า</div>
+                <div class="vol">2000 cc</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า S2000</div>
+          <div class="product-name">S2000 ซอสหมาล่า 2000 cc 500 ไม้</div>
+          <div class="product-price">
+            <span class="price-current">฿ 277.60</span>
+            <span class="price-original">฿ 347.00</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- S2000X6 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="bulk-banner">ซอสหมาล่า 2000 cc ทำได้ชุดละ 500 ไม้ 6 ชุด</div>
+          <div class="product-bag">
+            <div class="bag sauce">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ซอสหมาล่า</div>
+                <div class="vol">2000 cc</div>
+              </div>
+            </div>
+          </div>
+          <div class="bulk-qty">x6</div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า S2000X6</div>
+          <div class="product-name">S2000X6 ซอสหมาล่า 2000 cc 6 ชุด แต่ละชุดทำได้ 500 ไม้ ราคาพิเศษเพื่อไว้ขายทำกำไร</div>
+          <div class="product-price">
+            <span class="price-current">฿ 1,617.51</span>
+            <span class="price-original">฿ 2,021.89</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- S2000X12 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="bulk-banner">ซอสหมาล่า 2000 cc ทำได้ชุดละ 500 ไม้ 12 ชุด</div>
+          <div class="product-bag">
+            <div class="bag sauce">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ซอสหมาล่า</div>
+                <div class="vol">2000 cc</div>
+              </div>
+            </div>
+          </div>
+          <div class="bulk-qty">x12</div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า S2000X12</div>
+          <div class="product-name">S2000X12 ซอสหมาล่า 2000 cc 12 ชุด แต่ละชุดทำได้ 500 ไม้ ราคาพิเศษเพื่อไว้ขายทำกำไร</div>
+          <div class="product-price">
+            <span class="price-current">฿ 3,057.42</span>
+            <span class="price-original">฿ 3,821.78</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- S1000x6 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="bulk-banner">ซอสหมาล่า 1000 cc ทำได้ชุดละ 250 ไม้ 6 ชุด</div>
+          <div class="product-bag">
+            <div class="bag sauce">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ซอสหมาล่า</div>
+                <div class="vol">1000 cc</div>
+              </div>
+            </div>
+          </div>
+          <div class="bulk-qty">x6</div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า S1000x6</div>
+          <div class="product-name">S1000x6 ซอสหมาล่า 1000 cc 6 ชุด แต่ละชุดทำได้ 250 ไม้ ราคาพิเศษเพื่อไว้ขายทำกำไร</div>
+          <div class="product-price">
+            <span class="price-current">฿ 851.58</span>
+            <span class="price-original">฿ 1,064.48</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- S1000x12 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="bulk-banner">ซอสหมาล่า 1000 cc ทำได้ชุดละ 250 ไม้ 12 ชุด</div>
+          <div class="product-bag">
+            <div class="bag sauce">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ซอสหมาล่า</div>
+                <div class="vol">1000 cc</div>
+              </div>
+            </div>
+          </div>
+          <div class="bulk-qty">x12</div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า S1000x12</div>
+          <div class="product-name">S1000x12 ซอสหมาล่า 1000 cc 12 ชุด แต่ละชุดทำได้ 250 ไม้ ราคาพิเศษเพื่อไว้ขายทำกำไร</div>
+          <div class="product-price">
+            <span class="price-current">฿ 1,610.16</span>
+            <span class="price-original">฿ 2,012.70</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- P500 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="product-bag">
+            <div class="bag powder">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ผงพริกหมาล่า</div>
+                <div class="vol">500 กรัม</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า P500</div>
+          <div class="product-name">ผงพริกหมาล่า บิ๊กกริลล์ 500 กรัม สำหรับ 2500 ไม้</div>
+          <div class="product-price">
+            <span class="price-current">฿ 355.86</span>
+            <span class="price-original">฿ 444.82</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- P500x6 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="bulk-banner">ผงพริกหมาล่า 500 กรัม ทำได้ 2500 ไม้ 6 แพ็ค</div>
+          <div class="product-bag">
+            <div class="bag powder">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ผงพริกหมาล่า</div>
+                <div class="vol">500 กรัม</div>
+              </div>
+            </div>
+          </div>
+          <div class="bulk-qty">x6</div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า P500x6</div>
+          <div class="product-name">ผงพริกหมาล่า บิ๊กกริลล์ 500 กรัม 6 แพ็ค / 2500 ไม้ต่อแพ็ค</div>
+          <div class="product-price">
+            <span class="price-current">฿ 1,962.69</span>
+            <span class="price-original">฿ 2,453.36</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- S500 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="product-bag">
+            <div class="bag sauce">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ซอสหมาล่า</div>
+                <div class="vol">500 cc</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า S500</div>
+          <div class="product-name">S500 ซอสหมาล่า 500 cc 125 ไม้</div>
+          <div class="product-price">
+            <span class="price-current">฿ 91.20</span>
+            <span class="price-original">฿ 114.00</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- S500X6 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="bulk-banner">ซอสหมาล่า 500 cc ทำได้ชุดละ 125 ไม้ 6 ชุด</div>
+          <div class="product-bag">
+            <div class="bag sauce">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ซอสหมาล่า</div>
+                <div class="vol">500 cc</div>
+              </div>
+            </div>
+          </div>
+          <div class="bulk-qty">x6</div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า S500X6</div>
+          <div class="product-name">S500X6 ซอสหมาล่า 500 cc 6 ชุด แต่ละชุดทำได้ 125 ไม้ ราคาพิเศษเพื่อไว้ขายทำกำไร</div>
+          <div class="product-price">
+            <span class="price-current">฿ 531.36</span>
+            <span class="price-original">฿ 664.20</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- S500X12 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="bulk-banner">ซอสหมาล่า 500 cc ทำได้ชุดละ 125 ไม้ 12 ชุด</div>
+          <div class="product-bag">
+            <div class="bag sauce">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ซอสหมาล่า</div>
+                <div class="vol">500 cc</div>
+              </div>
+            </div>
+          </div>
+          <div class="bulk-qty">x12</div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า S500X12</div>
+          <div class="product-name">S500X12 ซอสหมาล่า 500 cc 12 ชุด แต่ละชุดทำได้ 125 ไม้ ราคาพิเศษเพื่อไว้ขายทำกำไร</div>
+          <div class="product-price">
+            <span class="price-current">฿ 1,002.96</span>
+            <span class="price-original">฿ 1,253.70</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- S1000 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="product-bag">
+            <div class="bag sauce">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ซอสหมาล่า</div>
+                <div class="vol">1000 cc</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า S1000</div>
+          <div class="product-name">S1000 ซอสหมาล่า 1000 cc 250 ไม้</div>
+          <div class="product-price">
+            <span class="price-current">฿ 160.43</span>
+            <span class="price-original">฿ 200.54</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+      <!-- S3000 -->
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <div class="product-bag">
+            <div class="bag sauce">
+              <div class="bag-seal"></div>
+              <div class="bag-label">
+                <div class="brand">บิ๊กกริลล์</div>
+                <div class="type">ซอสหมาล่า</div>
+                <div class="vol">3000 cc</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="product-info">
+          <div class="product-code">รหัสสินค้า S3000</div>
+          <div class="product-name">S3000 ซอสหมาล่า 3000 cc 750 ไม้</div>
+          <div class="product-price">
+            <span class="price-current">฿ 456.30</span>
+            <span class="price-original">฿ 570.37</span>
+          </div>
+          <span class="discount-tag">ลด 20%</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>บิ๊กกริลล์ (Big Grill)</strong> — ซอสหมาล่า &amp; ผงพริกหมาล่า คุณภาพพรีเมียม</p>
+    <p style="margin-top:8px; font-size:12px;">© 2026 บิ๊กกริลล์. Design mockup.</p>
+  </footer>
+
+</body>
+</html>

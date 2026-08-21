@@ -1,0 +1,63 @@
+﻿=== order_sn | order_status | is_return | create_time | update_time | OrderID ===
+count=4
+260722C5GC7MK6	SHIPPED	0	2026-07-22 18:17:15	2026-07-23 15:29:08	3174352
+260722C5GC7MK6	PROCESSED	0	2026-07-22 18:17:15	2026-07-23 17:41:01	3144070
+260722C5GC7MK6	UNPAID	0	2026-07-22 18:17:15	2026-07-23 17:46:01	3144069
+260722C5GC7MK6	CANCELLED	0	2026-07-22 18:17:15	2026-07-28 11:26:35	3175020
+
+=== taxinvoiceID | order_sn ===
+count=0
+
+=== tracking_number ===
+count=1
+
+
+=== order_status | OrderID | is_virtual_packed | cancel_by | cancel_reason | original_price | original_cost_of_goods_sold | seller_discount | buyer_paid_shipping_fee ===
+count=4
+SHIPPED	3174352	False			141	127	14	0
+PROCESSED	3144070	False			141	127	14	0
+UNPAID	3144069	False			141	127	14	0
+CANCELLED	3175020	False	system	Failed Delivery	0	127	0	0
+
+=== Shopee_taxinvoiceid_id | order_sn | taxinvoiceID | create_time | cdate ===
+count=0
+
+=== shopee_taxinvoiceid_v2_id | order_sn | taxinvoiceID | create_time | cdate ===
+count=1
+1599618	260722C5GC7MK6	Shp20260701456	07/22/2026 18:17:15	07/22/2026 18:22:19
+
+=== OrderID | order_sn | order_status ===
+count=4
+3144069	260722C5GC7MK6	UNPAID
+3144070	260722C5GC7MK6	PROCESSED
+3174352	260722C5GC7MK6	SHIPPED
+3175020	260722C5GC7MK6	CANCELLED
+
+=== taxinvoiceID | order_sn | create_time ===
+count=5
+Shp20260701184	260722AAJBVPSD	2026-07-22 00:42:32
+Shp20260701185	260722AB8M7WVQ	2026-07-22 00:54:58
+Shp20260701186	260722ABFXWHD4	2026-07-22 00:59:04
+Shp20260701187	260722ABUB4NPT	2026-07-22 01:05:26
+Shp20260701188	260722AMEHCRVE	2026-07-22 03:39:20
+
+=== item_sku | model_original_price | model_quantity_purchased | map_sku | ProductName ===
+count=1
+S500P25	141	1	S500P25	ซอสหม่าล่า 500 cc พริกหม่าล่า 25 กรัม
+
+=== taxinvoiceID | cnt ===
+count=3
+Shp20260601394	1
+Shp20260701192	1
+Shp20260701456	1
+
+=== order_sn | taxinvoiceID ===
+count=1
+26071822GMD43N	Shp20260701192
+
+=== order_sn | taxinvoiceID ===
+count=3
+260624UF3A062E	Shp20260601394
+260722B2N7KWK2	Shp20260701192
+260726P7D857JE	Shp20260701394
+

@@ -2,10 +2,11 @@ $(document).ready(function() {
 
 	chk_laz_token();
 	chk_sho_token();
+	chk_tik_token();
 
-	//30 second
 	setInterval(chk_laz_token, 300000);
 	setInterval(chk_sho_token, 300000);
+	setInterval(chk_tik_token, 300000);
 
 
 	function chk_laz_token(){
@@ -83,5 +84,40 @@ $(document).ready(function() {
         });
 	}
 
-	  	
+	function chk_tik_token(){
+		var el = document.getElementById("txt_order_tiktok_alert");
+		var box = document.getElementById("order_tiktok");
+		if (!el || !box) {
+			return;
+		}
+		var url_tiktok = hostname_site+"/"+"admintoken/tiktok_token_litetime";
+		$.ajax({
+			type: "POST",
+			url: url_tiktok,
+			dataType: "json",
+			async: false
+		})
+		.done(function(data_re) {
+			var data_token = data_re['data_token'] || {};
+			var days = parseInt(data_token['litetime_days'], 10);
+			var left = parseInt(data_token['lessthan'], 10);
+			if (isNaN(days)) {
+				days = 0;
+			}
+			if (isNaN(left)) {
+				left = 0;
+			}
+			if (days >= 2) {
+				el.innerHTML = "Expire in " + days + " day";
+			} else {
+				el.innerHTML = "Expire in " + (data_token['litetime'] || "00:00:00");
+			}
+			if (left < 86400) {
+				box.style = "animation: 1000ms ease-in-out infinite color-change";
+			} else {
+				box.style = "background-color:white";
+			}
+		});
+	}
+
 });

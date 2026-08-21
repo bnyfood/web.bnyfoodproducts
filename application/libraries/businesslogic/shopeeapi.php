@@ -43,6 +43,8 @@ private $data;
 	
 public function initWithAppPath_Method($path,$method)
 {
+   $this->CI->load->library('businesslogic/shopee_bl');
+   $this->CI->shopee_bl->ensure_access_token();
    $this->method=$method;
    $this->APIPath=$path;
    $timestamp=$this->get_timestamp();
@@ -398,6 +400,29 @@ $url=$url."&".$key."=".$value;
   return json_decode($return_str,true);
 
 
+  }
+
+
+
+  function execute_query()
+  {
+    $url = $this->url;
+    if (!empty($this->data) && is_array($this->data)) {
+      foreach ($this->data as $key => $value) {
+        if (is_array($value) || is_object($value)) {
+          $value = json_encode($value);
+        }
+        $url .= '&'.$key.'='.rawurlencode((string)$value);
+      }
+    }
+    $raw = $this->shopee_curl_get($url);
+    return json_decode($raw, true);
+  }
+
+  function execute_post()
+  {
+    $data = is_array($this->data) ? $this->data : array();
+    return $this->shopee_curl_post($this->url, $data);
   }
 
 

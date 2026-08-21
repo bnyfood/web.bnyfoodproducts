@@ -1,0 +1,66 @@
+inspected 2026-08-21T10:04:01
+
+===== lazada_orders columns (23) =====
+COLUMN_NAME | DATA_TYPE | CHARACTER_MAXIMUM_LENGTH | IS_NULLABLE
+OrderID | bigint |  | NO
+order_number | bigint |  | YES
+taxinvoiceID | varchar | 50 | YES
+created_at | datetime |  | NO
+shipping_fee_original | float |  | YES
+shipping_fee_discount_platform | float |  | YES
+shipping_fee_discount_seller | float |  | YES
+shipping_fee | float |  | YES
+voucher_platform | float |  | YES
+voucher_seller | float |  | YES
+voucher | float |  | YES
+price | float |  | YES
+tax_code | varchar | 255 | YES
+status | varchar | 100 | YES
+delivery_info | varchar | 255 | YES
+want_taxinvoice | tinyint |  | YES
+suborderinsereted | tinyint |  | YES
+keygen | varchar | 100 | YES
+updated_at | datetime |  | YES
+total_refund_val | float |  | YES
+cn_status | int |  | YES
+order_make_cn | int |  | YES
+is_virtual_packed | bit |  | NO
+
+===== tiktok_orders columns (34) =====
+COLUMN_NAME | DATA_TYPE | CHARACTER_MAXIMUM_LENGTH | IS_NULLABLE
+tiktok_orders_id | bigint |  | NO
+order_id | bigint |  | YES
+buyer_email | varchar | -1 | YES
+buyer_message | text | 2147483647 | YES
+cancel_order_sla_time | datetime |  | YES
+collection_time | datetime |  | YES
+create_time | datetime |  | YES
+delivery_option_id | bigint |  | YES
+delivery_option_name | varchar | 255 | YES
+delivery_time | datetime |  | YES
+delivery_type | varchar | 255 | YES
+fulfillment_type | varchar | 255 | YES
+has_updated_recipient_address | varchar | 50 | YES
+is_cod | varchar | 50 | YES
+is_on_hold_order | varchar | 50 | YES
+is_replacement_order | varchar | 50 | YES
+is_sample_order | varchar | 50 | YES
+need_upload_invoice | varchar | 50 | YES
+paid_time | datetime |  | YES
+payment_method_name | varchar | 50 | YES
+pick_up_cut_off_time | datetime |  | YES
+rts_sla_time | datetime |  | YES
+rts_time | datetime |  | YES
+shipping_provider | varchar | 50 | YES
+shipping_provider_id | bigint |  | YES
+shipping_type | varchar | 50 | YES
+status | varchar | 50 | YES
+tracking_number | varchar | 255 | YES
+tts_sla_time | datetime |  | YES
+update_time | datetime |  | YES
+...
+
+===== lazada sample packed+canceled (2) =====
+order_number | status | created_at | updated_at
+250712900811124 | canceled | 2019-09-03 11:39:57 | 2019-09-03 11:39:57
+250712900811124 | packed | 2019-09-03 11:39:57 | 2019-09-03 11:39:57

@@ -5,6 +5,8 @@
 **/
 class Domains extends Auth_Controller
 {
+	private $allowed_per_page = array(5, 10, 25, 50, 100);
+
 	function __construct()
 	{
 		parent::__construct();
@@ -21,76 +23,45 @@ class Domains extends Auth_Controller
 		$del_alt = $this->session->flashdata('del_domain');
 		$sess_shop_id = $this->session->userdata(SESSION_PREFIX.'shop_id');
 
-		$data_search = array(
-			'domain_search' => '',
-			'shopid_en' => $sess_shop_id,
-			'sortby' => '',
-			'sorttype' => '',
-			'offset' => 1,
-			'per_page' => 5
-		);
-
-		$arr_domains = $this->web_domain_model->get_by_shop($sess_shop_id,5);
-		if($arr_domains['Status'] == "Success"){
-			$max = sizeof($arr_domains['Data']);
-			for($i=0;$i<$max;$i++){
-				$arr_domains['Data'][$i]['web_domain_id'] = $this->encryption_util->encrypt_ssl($arr_domains['Data'][$i]['web_domain_id']);
-			}
-		}
-
-		$data = array(
-			'arr_domains' => $arr_domains['Data'],
-			'add_alt' => $add_alt,
-			'edit_alt' => $edit_alt,
-			'del_alt' => $del_alt,
-			'data_search' => $data_search
-		);
-
-		$arr_input = array(
-			'title' => "Manage Domains"
-		);
-
-		$arr_js = array(
-			'morecontent' => base_url()."resources/js/morecontent/webs/domain_list.js",
-			'table_load_sort' => base_url()."resources/js/table_load_sort.js"
-		);
-
-		$this->view_util->load_view_main('webs/domains/domains_list',$data,NULL,$arr_js,$arr_input,NULL);
-	}
-
-	public function domains_list_search()
-	{
-		$add_alt = $this->session->flashdata('add_domain');
-		$edit_alt = $this->session->flashdata('edit_domain');
-		$del_alt = $this->session->flashdata('del_domain');
-		$sess_shop_id = $this->session->userdata(SESSION_PREFIX.'shop_id');
-		$domain_search = $this->input->post('domain_search');
-		$sortby = $this->input->post('sortby');
-		$sorttype = $this->input->post('sorttype');
+		$per_page = $this->resolve_per_page($this->input->get_post('per_page'));
+		$page = max(1, (int)$this->input->get_post('page'));
+		$domain_search = trim((string)$this->input->get_post('domain_search'));
+		$sortby = (string)$this->input->get_post('sortby');
+		$sorttype = (string)$this->input->get_post('sorttype');
+		$offset = ($page - 1) * $per_page;
 
 		$data_search = array(
 			'domain_search' => $domain_search,
 			'shopid_en' => $sess_shop_id,
 			'sortby' => $sortby,
 			'sorttype' => $sorttype,
-			'offset' => 0,
-			'per_page' => 5
+			'offset' => $offset,
+			'per_page' => $per_page,
+			'page' => $page
 		);
 
-		$arr_domains = $this->curl_bl->CallApi('POST','webs/domains/domain_search',$data_search);
-		if($arr_domains['Status'] == "Success"){
-			$max = sizeof($arr_domains['Data']);
-			for($i=0;$i<$max;$i++){
-				$arr_domains['Data'][$i]['web_domain_id'] = $this->encryption_util->encrypt_ssl($arr_domains['Data'][$i]['web_domain_id']);
-			}
+		$parsed = $this->fetch_domain_page($data_search);
+		$domain_rows = $parsed['rows'];
+		$total = $parsed['total'];
+		$total_pages = max(1, (int)ceil($total / $per_page));
+		if($page > $total_pages){
+			$page = $total_pages;
+			$data_search['page'] = $page;
+			$data_search['offset'] = ($page - 1) * $per_page;
+			$parsed = $this->fetch_domain_page($data_search);
+			$domain_rows = $parsed['rows'];
+			$total = $parsed['total'];
 		}
 
 		$data = array(
-			'arr_domains' => $arr_domains['Data'],
+			'arr_domains' => $domain_rows,
 			'add_alt' => $add_alt,
 			'edit_alt' => $edit_alt,
 			'del_alt' => $del_alt,
-			'data_search' => $data_search
+			'data_search' => $data_search,
+			'total_rows' => $total,
+			'total_pages' => $total_pages,
+			'allowed_per_page' => $this->allowed_per_page
 		);
 
 		$arr_input = array(
@@ -98,19 +69,26 @@ class Domains extends Auth_Controller
 		);
 
 		$arr_js = array(
-			'morecontent' => base_url()."resources/js/morecontent/webs/domain_list.js",
-			'table_load_sort' => base_url()."resources/js/table_load_sort.js"
+			'domain_list' => base_url()."resources/js/morecontent/webs/domain_list.js"
 		);
 
-		$this->view_util->load_view_main('webs/domains/domains_list',$data,NULL,$arr_js,$arr_input,NULL);
+		$this->view_util->load_view_main('webs/domains/domains_list',$data,NULL,$arr_js,$arr_input,MENU_WEBS_DOMAINS);
+	}
+
+	public function domains_list_search()
+	{
+		// Same renderer as list; keep URL compatible with existing form action
+		$this->domains_list();
 	}
 
 	function loaddata_more_ajax(){
 		$sess_shop_id = $this->session->userdata(SESSION_PREFIX.'shop_id');
-		$domain_search = $this->input->post('domain_search');
-		$offset = $this->input->post('offset');
-		$sortby = $this->input->post('sortby');
-		$sorttype = $this->input->post('sorttype');
+		$domain_search = trim((string)$this->input->post('domain_search'));
+		$sortby = (string)$this->input->post('sortby');
+		$sorttype = (string)$this->input->post('sorttype');
+		$per_page = $this->resolve_per_page($this->input->post('per_page'));
+		$page = max(1, (int)$this->input->post('page'));
+		$offset = ($page - 1) * $per_page;
 
 		$data = array(
 			'domain_search' => $domain_search,
@@ -118,23 +96,19 @@ class Domains extends Auth_Controller
 			'sortby' => $sortby,
 			'sorttype' => $sorttype,
 			'offset' => $offset,
-			'per_page' => 5
+			'per_page' => $per_page
 		);
 
-		$arr_domains = $this->curl_bl->CallApiNospi('POST','webs/domains/domain_search',$data);
+		$parsed = $this->fetch_domain_page($data, true);
+		$total_pages = max(1, (int)ceil($parsed['total'] / $per_page));
 
-		if($arr_domains['Status'] == "Success"){
-			$max = sizeof($arr_domains['Data']);
-
-			for($i=0;$i<$max;$i++){
-				$arr_domains['Data'][$i]['web_domain_id'] = $this->encryption_util->encrypt_ssl($arr_domains['Data'][$i]['web_domain_id']);
-			}
-		}
-
-		$arr_data = array(
-			'list_data' => $arr_domains['Data']
-		);
-		echo json_encode($arr_data);
+		echo json_encode(array(
+			'list_data' => $parsed['rows'],
+			'total' => $parsed['total'],
+			'page' => $page,
+			'per_page' => $per_page,
+			'total_pages' => $total_pages
+		));
 	}
 
 	public function add_domain_form()
@@ -147,9 +121,8 @@ class Domains extends Auth_Controller
 			'validate' => base_url()."assets/js/jquery.validate.min.js",
 			'domain' => base_url()."resources/js/validate/Webs/domain.js"
 		);
-		
 
-		$this->view_util->load_view_main('webs/domains/add_domain_form',NULL,NULL,$arr_js,$arr_input,NULL);
+		$this->view_util->load_view_main('webs/domains/add_domain_form',NULL,NULL,$arr_js,$arr_input,MENU_WEBS_DOMAINS);
 	}
 
 	public function domain_add()
@@ -165,14 +138,17 @@ class Domains extends Auth_Controller
 
 		$data_curl = array(
 			'web_domain_name' => $web_domain_name,
-			'ShopID' => $shop_id
+			'ShopID' => $shop_id,
+			'registrar_link' => trim((string)$this->input->post('registrar_link')),
+			'ssl_link' => trim((string)$this->input->post('ssl_link')),
+			'expire_date' => trim((string)$this->input->post('expire_date'))
 		);
 
 		$arr_res = $this->curl_bl->CallApi('POST','webs/domains/domain_add',$data_curl);
 
 		$this->web_domain_model->del_cache_by_shop($shop_id);
 
-		if($arr_res['Status'] == "Success"){
+		if(isset($arr_res['Status']) && $arr_res['Status'] == "Success"){
 			$this->session->set_flashdata('add_domain','success');
 		}else{
 			$this->session->set_flashdata('add_domain','fail');
@@ -185,9 +161,18 @@ class Domains extends Auth_Controller
 	{
 		$id_en = $this->uri->segment(4);
 		$arr_domain = $this->web_domain_model->get_by_id($id_en);
+		$domain_row = array(
+			'web_domain_id' => $id_en,
+			'web_domain_name' => '',
+			'registrar_link' => '',
+			'ssl_link' => '',
+			'expire_date' => ''
+		);
 
-		if($arr_domain['Status'] == "Success"){
-			$arr_domain['Data']['web_domain_id'] = $this->encryption_util->encrypt_ssl($arr_domain['Data']['web_domain_id']);
+		if(isset($arr_domain['Status']) && $arr_domain['Status'] == "Success" && !empty($arr_domain['Data'])){
+			$domain_row = $arr_domain['Data'];
+			$domain_row['web_domain_id'] = $this->encryption_util->encrypt_ssl($domain_row['web_domain_id']);
+			$domain_row['expire_date'] = $this->format_expire_date_input(isset($domain_row['expire_date']) ? $domain_row['expire_date'] : '');
 		}
 
 		$arr_input = array(
@@ -195,7 +180,7 @@ class Domains extends Auth_Controller
 		);
 
 		$data = array(
-			'arr_domain' => $arr_domain['Data']
+			'arr_domain' => $domain_row
 		);
 
 		$arr_js = array(
@@ -203,7 +188,7 @@ class Domains extends Auth_Controller
 			'domain' => base_url()."resources/js/validate/Webs/domain.js"
 		);
 
-		$this->view_util->load_view_main('webs/domains/edit_domain_form',$data,NULL,$arr_js,$arr_input,NULL);
+		$this->view_util->load_view_main('webs/domains/edit_domain_form',$data,NULL,$arr_js,$arr_input,MENU_WEBS_DOMAINS);
 	}
 
 	public function domain_edit()
@@ -219,14 +204,17 @@ class Domains extends Auth_Controller
 
 		$data_curl = array(
 			'id_en' => $id_en,
-			'web_domain_name' => $web_domain_name
+			'web_domain_name' => $web_domain_name,
+			'registrar_link' => trim((string)$this->input->post('registrar_link')),
+			'ssl_link' => trim((string)$this->input->post('ssl_link')),
+			'expire_date' => trim((string)$this->input->post('expire_date'))
 		);
 
 		$arr_res = $this->curl_bl->CallApi('POST','webs/domains/domain_edit',$data_curl);
 
 		$this->web_domain_model->del_cache_by_id($id_en);
 
-		if($arr_res['Status'] == "Success"){
+		if(isset($arr_res['Status']) && $arr_res['Status'] == "Success"){
 			$this->session->set_flashdata('edit_domain','success');
 		}else{
 			$this->session->set_flashdata('edit_domain','fail');
@@ -239,11 +227,21 @@ class Domains extends Auth_Controller
 	{
 		$id_en = $this->uri->segment(4);
 		$shop_id = $this->session->userdata(SESSION_PREFIX.'shop_id');
-		$arr_res = $this->curl_bl->CallApi('GET','webs/domains/del_action/'.$id_en);
+		$arr_res = $this->curl_bl->CallApiNospi('GET','webs/domains/del_action/'.$id_en);
 
 		$this->web_domain_model->del_cache_by_shop($shop_id);
+		$this->web_domain_model->del_cache_by_id($id_en);
 
-		if($arr_res['Status'] == "Success"){
+		$ok = isset($arr_res['Status']) && $arr_res['Status'] == "Success";
+
+		if($this->input->is_ajax_request()){
+			echo json_encode(array(
+				'Status' => $ok ? 'Success' : 'Fail'
+			));
+			return;
+		}
+
+		if($ok){
 			$this->session->set_flashdata('del_domain','success');
 		}else{
 			$this->session->set_flashdata('del_domain','fail');
@@ -288,5 +286,69 @@ class Domains extends Auth_Controller
 		}else{
 			echo 'false';
 		}
+	}
+
+	private function resolve_per_page($value){
+		$per_page = (int)$value;
+		if(!in_array($per_page, $this->allowed_per_page, true)){
+			return 10;
+		}
+		return $per_page;
+	}
+
+	private function fetch_domain_page($data_search, $nospin = false){
+		if($nospin){
+			$arr_domains = $this->curl_bl->CallApiNospi('POST','webs/domains/domain_search',$data_search);
+		}else{
+			$arr_domains = $this->curl_bl->CallApi('POST','webs/domains/domain_search',$data_search);
+		}
+
+		$rows = array();
+		$total = 0;
+		if(isset($arr_domains['Status']) && $arr_domains['Status'] == "Success" && !empty($arr_domains['Data'])){
+			$payload = $arr_domains['Data'];
+			if(isset($payload['rows']) && is_array($payload['rows'])){
+				$rows = $payload['rows'];
+				$total = isset($payload['total']) ? (int)$payload['total'] : count($rows);
+			}elseif(is_array($payload) && isset($payload[0])){
+				// backward compatible flat list
+				$rows = $payload;
+				$total = count($rows);
+			}
+		}
+
+		$max = sizeof($rows);
+		for($i=0;$i<$max;$i++){
+			if(isset($rows[$i]['web_domain_id'])){
+				$rows[$i]['web_domain_id'] = $this->encryption_util->encrypt_ssl($rows[$i]['web_domain_id']);
+			}
+			$rows[$i]['expire_date_display'] = $this->format_expire_date_display(isset($rows[$i]['expire_date']) ? $rows[$i]['expire_date'] : '');
+		}
+
+		return array('rows' => $rows, 'total' => $total);
+	}
+
+	private function format_expire_date_input($value){
+		$value = trim((string)$value);
+		if($value === ''){
+			return '';
+		}
+		$ts = strtotime($value);
+		if($ts === false){
+			return '';
+		}
+		return date('Y-m-d', $ts);
+	}
+
+	private function format_expire_date_display($value){
+		$value = trim((string)$value);
+		if($value === ''){
+			return '';
+		}
+		$ts = strtotime($value);
+		if($ts === false){
+			return $value;
+		}
+		return date('Y-m-d', $ts);
 	}
 }

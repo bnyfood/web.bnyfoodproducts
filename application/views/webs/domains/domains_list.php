@@ -5,39 +5,24 @@
     </div>
   </div>
   <div class="page-content" style="margin-right: 10px">
-    <div style="display:flex; gap:0px; align-items:flex-start;">
-      <div style="flex:0 0 240px;">
-        <div class="panel panel_box" style="margin: 20px 20px 20px 20px">
-          <div class="panel-body" style="background:#fff; border-radius:7px; min-height: 200px;">
-            <h4 class="example-title">Webs Menu</h4>
-            <div class="list-group">
-              <a class="list-group-item active" href="<?php echo base_url();?>webs/domains/domains_list">Domains</a>
-              <a class="list-group-item" href="#">Example Menu 1</a>
-              <a class="list-group-item" href="#">Example Menu 2</a>
-              <a class="list-group-item" href="#">Example Menu 3</a>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="flex:1; min-width:0;">
         <div class="panel panel_box" style="margin-bottom:20px;margin-top:20px;">
           <div class="panel-body" style="background:#fff; border-radius:7px;">
             <div class="example-wrap">
               <div class="example">
-                <form role="form" name="domain_search_form" id="domain_search_form" action="<?php echo base_url()."webs/domains/domains_list_search";?>" method="post">
-                  
-                <input type="hidden" name="search_type" id="search_type" value="1">
+                <form role="form" name="domain_search_form" id="domain_search_form" action="<?php echo base_url()."webs/domains/domains_list";?>" method="get">
                     <div class="panel-body">
-                      <h4 class="example-title">ค้นหา Domain</h4>
                       <div class="row">
                         <div class="col-md-12">
-                          <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;margin-top:15px;">
-                            <input type="text" class="form-control" id="domain_search" name="domain_search" placeholder="Search..." value="<?php echo $data_search['domain_search']?>" style="width:20%;">
-                            <button type="submit" class="btn btn-primary">ค้นหา</button>
+                          <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;margin-top:15px; flex-wrap:wrap;">
+                            <input type="text" class="form-control" id="domain_search" name="domain_search" placeholder="Search..." value="<?php echo htmlspecialchars($data_search['domain_search'], ENT_QUOTES, 'UTF-8');?>" style="width:20%; min-width:160px;">
+                            <button type="submit" class="btn btn-primary" id="btn_search">ค้นหา</button>
                             <a href="<?php echo base_url();?>webs/domains/domains_list" id="addToTable" class="btn btn-default">ทั้งหมด</a>
                             <a href="<?php echo base_url();?>webs/domains/add_domain_form" class="btn btn-outline btn-primary">
                               <i class="icon wb-plus" aria-hidden="true"></i> Add Domain
                             </a>
+                            <input type="hidden" name="page" id="page" value="<?php echo (int)$data_search['page'];?>">
+                            <input type="hidden" name="sortby" id="sortby" value="<?php echo htmlspecialchars($data_search['sortby'], ENT_QUOTES, 'UTF-8');?>">
+                            <input type="hidden" name="sorttype" id="sorttype" value="<?php echo htmlspecialchars($data_search['sorttype'], ENT_QUOTES, 'UTF-8');?>">
                           </div>
                         </div>
                       </div>
@@ -106,6 +91,12 @@
                     <i class="icon wb-triangle-up asssort" aria-hidden="true" onclick="tablesort('web_domain_name','asc',0)"></i>
                     <i class="icon wb-triangle-down asssort" aria-hidden="true" onclick="tablesort('web_domain_name','desc',1)"></i>
                   </th>
+                  <th>Registrar link</th>
+                  <th>SSL link</th>
+                  <th>Expiration
+                    <i class="icon wb-triangle-up asssort" aria-hidden="true" onclick="tablesort('expire_date','asc',2)"></i>
+                    <i class="icon wb-triangle-down asssort" aria-hidden="true" onclick="tablesort('expire_date','desc',3)"></i>
+                  </th>
                   <th class="text-nowrap">Action</th>
                 </tr>
               </thead>
@@ -113,33 +104,58 @@
               <?php 
                   if(!empty($arr_domains)){
                   foreach($arr_domains as $arr_domain){
+                    $reg = isset($arr_domain['registrar_link']) ? trim($arr_domain['registrar_link']) : '';
+                    $ssl = isset($arr_domain['ssl_link']) ? trim($arr_domain['ssl_link']) : '';
+                    $exp = isset($arr_domain['expire_date_display']) ? $arr_domain['expire_date_display'] : '';
               ?>  
               <tr>
-                <td><?php echo $arr_domain['web_domain_name']?></td>
+                <td><?php echo htmlspecialchars($arr_domain['web_domain_name'], ENT_QUOTES, 'UTF-8');?></td>
+                <td>
+                  <?php if($reg !== ''){ ?>
+                    <a href="<?php echo htmlspecialchars($reg, ENT_QUOTES, 'UTF-8');?>" target="_blank" rel="noopener noreferrer">Open</a>
+                  <?php } else { echo '-'; } ?>
+                </td>
+                <td>
+                  <?php if($ssl !== ''){ ?>
+                    <a href="<?php echo htmlspecialchars($ssl, ENT_QUOTES, 'UTF-8');?>" target="_blank" rel="noopener noreferrer">Open</a>
+                  <?php } else { echo '-'; } ?>
+                </td>
+                <td><?php echo $exp !== '' ? htmlspecialchars($exp, ENT_QUOTES, 'UTF-8') : '-';?></td>
                 <td class="text-nowrap">
                   <a href="<?php echo base_url();?>webs/domains/domain_edit_form/<?php echo $arr_domain['web_domain_id'];?>" data-toggle="tooltip" data-original-title="Edit"> 
                     <i class="icon wb-wrench" aria-hidden="true"></i>
                   </a>
-                  <button class="btn btn-sm btn-icon btn-flat btn-default" data-target="#confirm_delete" data-toggle="modal" type="button" data-href="<?php echo base_url();?>webs/domains/del_action/<?php echo $arr_domain['web_domain_id'];?>"><i class="icon wb-close" aria-hidden="true"></i></button>
+                  <a href="#" class="js-domain-del" data-id="<?php echo htmlspecialchars($arr_domain['web_domain_id'], ENT_QUOTES, 'UTF-8');?>" data-toggle="tooltip" data-original-title="Delete">
+                    <i class="icon wb-close" aria-hidden="true"></i>
+                  </a>
                 </td>
               </tr>          
             <?php }}?>
             <?php if(empty($arr_domains)){?>
               <tr>
-                <td colspan="2" class="text-center">No domains found</td>
+                <td colspan="5" class="text-center">No domains found</td>
               </tr>
             <?php }?>
-              <input type="hidden" name="offset" id="offset" value="0">
-              <input type="hidden" name="sortby" id="sortby" value="<?php echo $data_search['sortby']?>">
-              <input type="hidden" name="sorttype" id="sorttype" value="<?php echo $data_search['sorttype']?>">
             </tbody>
           </table>
+          <div id="domain-pager" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:10px 10px 20px;">
+            <span id="domain-pager-info">
+              Showing page <?php echo (int)$data_search['page'];?> / <?php echo (int)$total_pages;?>
+              (<?php echo (int)$total_rows;?> total)
+            </span>
+            <button type="button" class="btn btn-default btn-sm" id="btn_prev_page" <?php echo ((int)$data_search['page'] <= 1) ? 'disabled' : '';?>>Prev</button>
+            <button type="button" class="btn btn-default btn-sm" id="btn_next_page" <?php echo ((int)$data_search['page'] >= (int)$total_pages) ? 'disabled' : '';?>>Next</button>
+            <label for="per_page" style="margin:0 0 0 8px;">Rows</label>
+            <select class="form-control input-sm" name="per_page" id="per_page" form="domain_search_form" style="width:90px; display:inline-block;">
+              <?php foreach($allowed_per_page as $opt){ ?>
+                <option value="<?php echo (int)$opt;?>" <?php echo ((int)$data_search['per_page'] === (int)$opt) ? 'selected' : '';?>><?php echo (int)$opt;?></option>
+              <?php } ?>
+            </select>
+          </div>
 
           </div>
         </div>
           </div>
         </div>
-      </div>
-    </div>
   </div> 
 </div>       

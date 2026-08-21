@@ -19,6 +19,7 @@ class Admintoken extends CI_Controller
 		
 	    $this->load->model('laztoken_model');
 	    $this->load->model('shopee_token_model');
+	    $this->load->model('tiktok_token_model');
 
 	    
 
@@ -29,6 +30,8 @@ class Admintoken extends CI_Controller
      }
 
      public function token_litetime(){
+     	$this->load->library('businesslogic/chat_platform_bl');
+     	$this->chat_platform_bl->ensure_lazada_token();
      	$data_token = $this->laztoken_model->get_litetime_token();
 
 		$data = array(
@@ -39,12 +42,29 @@ class Admintoken extends CI_Controller
      }
 
      public function shopee_token_litetime(){
+     	$this->load->library('businesslogic/shopee_bl');
+     	$this->shopee_bl->ensure_access_token();
      	$data_token = $this->shopee_token_model->get_litetime_token();
 
 		$data = array(
 			'data_token' => $data_token
 		);
 		
+		echo json_encode($data);
+     }
+
+     public function tiktok_token_litetime(){
+     	$data_token = $this->tiktok_token_model->get_litetime_token();
+     	if (empty($data_token)) {
+     		$data_token = array(
+     			'lessthan' => 0,
+     			'litetime' => '00:00:00',
+     			'litetime_days' => 0
+     		);
+     	}
+		$data = array(
+			'data_token' => $data_token
+		);
 		echo json_encode($data);
      }
 

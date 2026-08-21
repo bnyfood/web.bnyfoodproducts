@@ -47,14 +47,24 @@ function update_status_complete(){
 }
 
 function update_status_complete_by_no($arr_order_sn){
-
+		if (empty($arr_order_sn) || !is_array($arr_order_sn)) {
+			return;
+		}
+		$sns = array();
+		foreach ($arr_order_sn as $sn) {
+			$sn = trim((string)$sn);
+			if ($sn !== '') {
+				$sns[] = $sn;
+			}
+		}
+		if (empty($sns)) {
+			return;
+		}
 		$data = array(
 			'is_death_status' => 1
 		);
-
-    	$this->db->where_in('order_sn',$arr_order_sn);
-		$this->db->update('shopee_order_list',$data);
-		//echo $this->db->last_query();
+		$this->db->where_in('order_sn', $sns);
+		$this->db->update('shopee_order_list', $data);
 	}
 
 function getlastElement($str,$spliter)
